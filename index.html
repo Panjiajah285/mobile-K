@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartCanteen - Sistem Kantin Digital Sekolah Modern & Anti Antre</title>
+  <meta name="description"
+    content="SmartCanteen adalah sistem kantin digital sekolah untuk memesan makanan sebelum istirahat, memantau stok secara real-time, dan mengelola operasional kantin secara efisien.">
+  <meta name="keywords" content="kantin sekolah, smart canteen, antrean kantin, pemesanan makanan, pre-order sekolah">
+
+  <!-- Google Fonts: Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <!-- Top Prototype Control Bar (Untuk Evaluator & Pengujian) -->
+  <div class="prototype-bar" id="prototype-bar">
+    <div class="brand-badge">
+      <span>⚡ PROTOTYPE TESTER:</span>
+      <span style="color: #cbd5e1; font-weight: normal;">Pilih role & halaman untuk demonstrasi interaktif</span>
+    </div>
+
+    <div class="role-switcher-group">
+      <button class="role-btn active" data-role="siswa" id="role-siswa-btn" title="Simulasi Sebagai Siswa">
+        <span>🎓</span> Mode Siswa
+      </button>
+      <button class="role-btn" data-role="pengelola" id="role-admin-btn" title="Simulasi Sebagai Pengelola Kantin">
+        <span>👨‍🍳</span> Mode Pengelola Kantin
+      </button>
+    </div>
+
+    <div class="prototype-actions">
+      <button class="btn-pill-sm" id="btn-sound-toggle" title="Nyalakan/Matikan Suara">
+        <span id="sound-icon">🔔</span> Suara: ON
+      </button>
+      <button class="btn-pill-sm" id="btn-reset-data" title="Kembalikan data simulasi ke awal">
+        🔄 Reset Demo Data
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Sticky Navigation -->
+  <header class="main-navbar">
+    <div class="container">
+      <div class="nav-wrapper">
+        <a href="#landing" class="logo" id="nav-brand-logo">
+          <div class="logo-icon">🥗</div>
+          <div class="logo-text">Smart<span>Canteen</span></div>
+        </a>
+
+        <!-- Dynamic Nav Links based on Role -->
+        <nav>
+          <ul class="nav-links" id="main-nav-links">
+            <!-- Rendered dynamically by JS -->
+          </ul>
+        </nav>
+
+        <div class="nav-cta-group">
+          <!-- Cart Button for Students -->
+          <button class="cart-nav-btn" id="btn-open-cart" title="Keranjang Belanja Siswa">
+            🛒
+            <span class="cart-badge" id="nav-cart-badge">0</span>
+          </button>
+
+          <!-- Quick Action Button -->
+          <button class="btn btn-primary btn-sm" id="btn-quick-nav-cta">
+            Pesan Sekarang
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =======================================================
+       PAGE 1: LANDING PAGE
+       ======================================================= -->
+  <main id="view-landing" class="page-view">
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="hero-text-content">
+            <div class="hero-tag">
+              <span class="hero-tag-dot"></span>
+              Sistem Kantin Digital Resmi Sekolah
+            </div>
+            <h1 class="hero-title">
+              Istirahat Lebih Santai, <span class="text-gradient">Tanpa Antre Panjang</span>
+            </h1>
+            <p class="hero-subtitle">
+              Pesan makanan sebelum ke kantin, cek stok secara real-time, dan ambil pesanan saat sudah siap. Waktu
+              istirahat jadi lebih berkualitas bersama teman-teman!
+            </p>
+            <div class="hero-cta">
+              <button class="btn btn-accent btn-lg" id="hero-btn-order">
+                🍔 Pesan Sekarang
+              </button>
+              <button class="btn btn-secondary btn-lg" id="hero-btn-menu">
+                📋 Lihat Menu
+              </button>
+            </div>
+            <div class="hero-badges">
+              <div class="hero-stat-item">
+                <span class="hero-stat-num">~18 Mnt</span>
+                <span class="hero-stat-desc">Waktu Istirahat Terhemat</span>
+              </div>
+              <div class="hero-stat-item">
+                <span class="hero-stat-num">100%</span>
+                <span class="hero-stat-desc">Kepastian Stok Real-time</span>
+              </div>
+              <div class="hero-stat-item">
+                <span class="hero-stat-num">0 Antrean</span>
+                <span class="hero-stat-desc">Sistem Tiket Digital</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual-wrapper">
+            <div class="hero-image-card">
+              <img src="assets/images/hero-illustration.jpg" alt="Ilustrasi Siswa Memesan Makanan di Kantin Sekolah">
+
+              <!-- Floating Interactive Mockup Badges -->
+              <div class="floating-widget-1">
+                <div class="widget-icon green">⏱️</div>
+                <div class="widget-text">
+                  <div class="title">Pesanan #A-024 Siap!</div>
+                  <div class="sub">Silakan ambil di Stan 1 Dapur Bu Siti</div>
+                </div>
+              </div>
+
+              <div class="floating-widget-2">
+                <div class="widget-icon orange">🥗</div>
+                <div class="widget-text">
+                  <div class="title">Stok Real-time Update</div>
+                  <div class="sub">Mie Ayam sisa 4 porsi lagi</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problem vs Solution Section -->
+    <section class="section-padding problem-solution-section" id="section-masalah">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Perbandingan Nyata</span>
+          <h2 class="section-title">Mengapa Kantin Sekolah Perlu Beralih ke Digital?</h2>
+          <p class="section-desc">Kantin konvensional seringkali menyita hampir seluruh waktu istirahat siswa hanya
+            untuk berdesakan mengantre makanan.</p>
+        </div>
+
+        <div class="compare-grid">
+          <!-- Problem Box -->
+          <div class="compare-card problem">
+            <div class="compare-head">
+              <div class="compare-badge-icon">❌</div>
+              <h3>Kantin Konvensional</h3>
+            </div>
+            <ul class="compare-list">
+              <li>
+                <span class="icon">⏳</span>
+                <span><strong>Waktu istirahat habis:</strong> Siswa mengantre 20-25 menit, waktu makan tersisa hanya 5
+                  menit terburu-buru.</span>
+              </li>
+              <li>
+                <span class="icon">🚫</span>
+                <span><strong>Stok tidak jelas:</strong> Sudah capek mengantre di depan stan, ternyata makanan favorit
+                  sudah habis.</span>
+              </li>
+              <li>
+                <span class="icon">📝</span>
+                <span><strong>Pencatatan manual:</strong> Penjual mencatat di kertas nota rawan hilang, salah hitung,
+                  dan transaksi lambat.</span>
+              </li>
+              <li>
+                <span class="icon">👥</span>
+                <span><strong>Kerumunan padat:</strong> Area konter kantin penuh sesak dan kurang higienis saat jam
+                  istirahat.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Solution Box -->
+          <div class="compare-card solution">
+            <div class="compare-head">
+              <div class="compare-badge-icon">✅</div>
+              <h3>Solusi SmartCanteen</h3>
+            </div>
+            <ul class="compare-list">
+              <li>
+                <span class="icon">⚡</span>
+                <span><strong>Pre-order fleksibel:</strong> Pesan saat jam kelas atau pagi hari, makanan langsung
+                  disiapkan tepat waktu.</span>
+              </li>
+              <li>
+                <span class="icon">🟢</span>
+                <span><strong>Indikator stok real-time:</strong> Informasi stok akurat: <em>Tersedia</em>, <em>Hampir
+                    Habis</em>, atau <em>Habis</em>.</span>
+              </li>
+              <li>
+                <span class="icon">📱</span>
+                <span><strong>Tiket antrean digital:</strong> Dapatkan nomor antrean dan notifikasi langsung saat
+                  makanan siap diambil.</span>
+              </li>
+              <li>
+                <span class="icon">📊</span>
+                <span><strong>Dashboard otomatis:</strong> Pengelola kantin mengelola stok, antrean dapur, dan omzet
+                  secara rapi dan digital.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Key Benefits Section -->
+    <section class="section-padding" id="section-keunggulan">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Keunggulan Utama</span>
+          <h2 class="section-title">Fitur Lengkap untuk Siswa & Pengelola</h2>
+          <p class="section-desc">Dirancang khusus untuk mendukung ritme sekolah modern yang serba cepat, tertib, dan
+            higienis.</p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon-box">🛡️</div>
+            <h4>Anti Antre Panjang</h4>
+            <p>Siswa tidak perlu lagi berdiri di kerumunan. Cukup duduk santai dan pantau status pesanan dari
+              smartphone.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-box orange">📦</div>
+            <h4>Pantau Stok Real-time</h4>
+            <p>Stok berkurang otomatis setiap ada pesanan. Menghindari kekecewaan siswa yang kehabisan menu di tempat.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-box">⏰</div>
+            <h4>Pre-Order Terjadwal</h4>
+            <p>Pilih slot waktu istirahat yang diinginkan: Istirahat 1 (09.45), Istirahat 2 (12.00), atau diambil
+              langsung.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-box orange">🔔</div>
+            <h4>Notifikasi Siap Ambil</h4>
+            <p>Pengingat visual dan suara instan ketika hidangan selesai dimasak oleh stan kantin.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-box">💳</div>
+            <h4>Pembayaran Mudah & Aman</h4>
+            <p>Mendukung Saldo Kartu Pelajar (SmartPay), QRIS Standar Nasional, maupun pembayaran Tunai di stan.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-box orange">📈</div>
+            <h4>Laporan Finansial Rapi</h4>
+            <p>Rekapitulasi omzet harian, mingguan, grafik jam sibuk, dan produk terlaris dalam satu klik.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section-padding how-it-works-section" id="section-cara-kerja">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Cara Kerja</span>
+          <h2 class="section-title">Hanya 4 Langkah Praktis</h2>
+          <p class="section-desc">Pesan makanan favoritmu dalam hitungan detik tanpa drama antre berdesakan.</p>
+        </div>
+
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-number-bubble">1</div>
+            <h4>Pilih Menu Favorit</h4>
+            <p>Buka katalog menu, cek foto makanan menggugah selera, dan pastikan stok masih tersedia.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number-bubble">2</div>
+            <h4>Pesan & Bayar Cepat</h4>
+            <p>Tentukan slot jam istirahat pengambilanmu dan pilih metode bayar SmartPay atau QRIS.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number-bubble">3</div>
+            <h4>Dapat Nomor Antrean</h4>
+            <p>Terima tiket antrean digital langsung di HP dan pantau status memasak secara real-time.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number-bubble">4</div>
+            <h4>Ambil Pesanan</h4>
+            <p>Datang ke stan saat status berubah menjadi <em>Siap Diambil</em>. Tunjukkan tiket dan nikmati makananmu!
+            </p>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 3.5rem;">
+          <button class="btn btn-primary btn-lg" id="btn-start-order-cta">
+            Coba Pesan Sekarang 🚀
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <div class="logo">
+              <div class="logo-icon">🥗</div>
+              <div class="logo-text">Smart<span>Canteen</span></div>
+            </div>
+            <p>Solusi kantin digital pintar untuk sekolah modern. Menciptakan ekosistem kantin yang bersih, cepat,
+              transparan, dan ramah pelajar.</p>
+          </div>
+
+          <div class="footer-col">
+            <h5>Navigasi</h5>
+            <ul class="footer-links">
+              <li><a href="#landing">Beranda</a></li>
+              <li><a href="#menu" class="nav-to-menu">Katalog Menu</a></li>
+              <li><a href="#cara-kerja">Cara Kerja</a></li>
+              <li><a href="#status" class="nav-to-status">Cek Antrean</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h5>Jadwal Istirahat</h5>
+            <ul class="footer-links">
+              <li><span style="color: #cbd5e1;">Istirahat 1:</span> 09.45 - 10.15</li>
+              <li><span style="color: #cbd5e1;">Istirahat 2:</span> 12.00 - 12.45</li>
+              <li><span style="color: #cbd5e1;">Operasional:</span> Senin - Jumat</li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h5>Akses Pengelola</h5>
+            <ul class="footer-links">
+              <li><a href="#dashboard" class="nav-to-dashboard">Dashboard Kantin</a></li>
+              <li><a href="#stok" class="nav-to-stock">Manajemen Stok</a></li>
+              <li><a href="#laporan" class="nav-to-finance">Laporan Keuangan</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div>© 2026 SmartCanteen Digital System. All rights reserved.</div>
+          <div>Dibuat dengan dedikasi untuk efisiensi waktu istirahat siswa.</div>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+
+  <!-- =======================================================
+       PAGE 2: HALAMAN MENU SISWA
+       ======================================================= -->
+  <section id="view-menu" class="page-view student-menu-page" style="display: none;">
+    <div class="container">
+
+      <!-- Top Title & Search -->
+      <div class="menu-top-bar">
+        <div>
+          <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem;">
+            Katalog Makanan & Minuman 🍱
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">
+            Pilih menu favoritmu, cek ketersediaan stok, dan tambahkan ke keranjang.
+          </p>
+        </div>
+
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="menu-search-input" class="search-input"
+            placeholder="Cari ayam geprek, es teh, siomay...">
+        </div>
+
+        <div class="menu-filter-controls">
+          <select id="menu-sort-select" class="custom-select">
+            <option value="popular">🔥 Paling Populer</option>
+            <option value="price-low">💰 Harga Terendah</option>
+            <option value="price-high">💎 Harga Tertinggi</option>
+            <option value="stock">📦 Stok Terbanyak</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="category-pills" id="category-pills-container">
+        <button class="pill-btn active" data-category="all">Semua Menu</button>
+        <button class="pill-btn" data-category="makanan-berat">🍛 Makanan Berat</button>
+        <button class="pill-btn" data-category="camilan">🥟 Camilan & Snack</button>
+        <button class="pill-btn" data-category="minuman">🥤 Minuman Segar</button>
+        <button class="pill-btn" data-category="paket-hemat">⭐ Paket Hemat</button>
+        <button class="pill-btn" data-category="sehat">🥗 Menu Sehat</button>
+      </div>
+
+      <!-- Food Grid -->
+      <div class="menu-grid" id="food-card-grid">
+        <!-- Rendered dynamically by JS -->
+      </div>
+
+      <!-- Empty State if search finds nothing -->
+      <div id="menu-empty-state" style="display: none; text-align: center; padding: 4rem 1rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🍽️</div>
+        <h3 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem;">Menu Tidak Ditemukan</h3>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Coba gunakan kata kunci pencarian lain atau pilih
+          kategori Semua Menu.</p>
+        <button class="btn btn-secondary btn-sm" id="btn-reset-filter">Reset Filter</button>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- =======================================================
+       PAGE 3: HALAMAN CHECKOUT
+       ======================================================= -->
+  <section id="view-checkout" class="page-view checkout-page" style="display: none;">
+    <div class="container">
+      <div style="margin-bottom: 2rem;">
+        <button class="btn btn-secondary btn-sm" id="btn-back-to-menu-from-checkout" style="margin-bottom: 1rem;">
+          ← Kembali ke Menu
+        </button>
+        <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--text-main);">
+          Konfirmasi & Pembayaran Pesanan 💳
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Pastikan data pemesan dan pilihan jam istirahat sudah sesuai sebelum konfirmasi.
+        </p>
+      </div>
+
+      <div class="checkout-grid">
+        <!-- Left: Form Identity, Slot, Payment -->
+        <div class="checkout-main-forms">
+
+          <!-- Identity Card -->
+          <div class="checkout-card">
+            <div class="checkout-card-header">
+              <span class="checkout-badge-num">1</span>
+              <h4>Data Siswa Pemesan</h4>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="input-student-name">Nama Lengkap Siswa *</label>
+                <input type="text" id="input-student-name" class="form-input" placeholder="Contoh: Natania Oktaviani"
+                  value="Natania Oktaviani" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="input-student-class">Kelas / Ruang Belajar *</label>
+                <input type="text" id="input-student-class" class="form-input" placeholder="Contoh: XI MIPA 1"
+                  value="XI MIPA 1" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pickup Slot Card -->
+          <div class="checkout-card">
+            <div class="checkout-card-header">
+              <span class="checkout-badge-num">2</span>
+              <h4>Pilihan Jam Pengambilan (Pre-Order)</h4>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Makanan akan disiapkan panas dan segar sesuai dengan jadwal istirahat yang Anda tentukan.
+            </p>
+            <div class="slot-options">
+              <div>
+                <input type="radio" name="pickup-slot" id="slot-1" class="slot-radio"
+                  value="Istirahat 1 (09.45 - 10.15)" checked>
+                <label for="slot-1" class="slot-label">
+                  <strong>Istirahat 1</strong>
+                  <span class="slot-time">09.45 - 10.15 WIB</span>
+                </label>
+              </div>
+              <div>
+                <input type="radio" name="pickup-slot" id="slot-2" class="slot-radio"
+                  value="Istirahat 2 (12.00 - 12.45)">
+                <label for="slot-2" class="slot-label">
+                  <strong>Istirahat 2</strong>
+                  <span class="slot-time">12.00 - 12.45 WIB</span>
+                </label>
+              </div>
+              <div>
+                <input type="radio" name="pickup-slot" id="slot-now" class="slot-radio"
+                  value="Sekarang (Langsung Diambil)">
+                <label for="slot-now" class="slot-label">
+                  <strong>Sekarang</strong>
+                  <span class="slot-time">~5-10 mnt lagi</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Method Card -->
+          <div class="checkout-card">
+            <div class="checkout-card-header">
+              <span class="checkout-badge-num">3</span>
+              <h4>Metode Pembayaran</h4>
+            </div>
+            <div class="payment-options">
+              <div>
+                <input type="radio" name="payment-method" id="pay-smartpay" class="payment-radio"
+                  value="SmartPay (Saldo Kartu Pelajar)" checked>
+                <label for="pay-smartpay" class="payment-card">
+                  <span class="payment-icon">💳</span>
+                  <div class="payment-info">
+                    <h6>SmartPay - Kartu Pelajar Digital</h6>
+                    <p>Saldo Tersedia: Rp 75.000 (Otomatis terpotong, tanpa uang tunai)</p>
+                  </div>
+                  <span class="badge badge-success">Instan</span>
+                </label>
+              </div>
+
+              <div>
+                <input type="radio" name="payment-method" id="pay-qris" class="payment-radio"
+                  value="QRIS Sekolah (BCA, GoPay, OVO, DANA)">
+                <label for="pay-qris" class="payment-card">
+                  <span class="payment-icon">📱</span>
+                  <div class="payment-info">
+                    <h6>QRIS Sekolah Nasional</h6>
+                    <p>Scan barcode dengan GoPay, OVO, ShopeePay, DANA, BCA Mobile</p>
+                  </div>
+                  <span class="badge badge-info">Bebas Biaya</span>
+                </label>
+              </div>
+
+              <div>
+                <input type="radio" name="payment-method" id="pay-cash" class="payment-radio"
+                  value="Tunai di Kasir Stan">
+                <label for="pay-cash" class="payment-card">
+                  <span class="payment-icon">💵</span>
+                  <div class="payment-info">
+                    <h6>Bayar Tunai di Stan</h6>
+                    <p>Bayar langsung dengan uang pas saat mengambil makanan di konter</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Special Note -->
+          <div class="checkout-card">
+            <div class="checkout-card-header">
+              <span class="checkout-badge-num">4</span>
+              <h4>Catatan Tambahan untuk Dapur (Opsional)</h4>
+            </div>
+            <textarea id="input-order-notes" class="form-input" rows="2"
+              placeholder="Contoh: Sambal dipisah, kuah banyak, es batu sedikit..."></textarea>
+          </div>
+
+        </div>
+
+        <!-- Right: Order Summary Sidebar -->
+        <div class="summary-sidebar">
+          <div class="checkout-card">
+            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem;">Rincian Pesanan</h4>
+
+            <div id="checkout-items-list"
+              style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <ul class="summary-breakdown">
+              <li>
+                <span class="text-muted">Subtotal Makanan</span>
+                <span id="checkout-subtotal-val" style="font-weight: 600;">Rp 0</span>
+              </li>
+              <li>
+                <span class="text-muted">Biaya Layanan Sistem</span>
+                <span style="font-weight: 600; color: var(--primary-dark);">GRATIS (Rp 0)</span>
+              </li>
+              <li>
+                <span class="text-muted">Diskon Pelajar SmartCanteen</span>
+                <span style="font-weight: 600; color: var(--accent-dark);">- Rp 0</span>
+              </li>
+            </ul>
+
+            <div class="summary-total">
+              <span>Total Pembayaran</span>
+              <span id="checkout-total-val" style="color: var(--primary-dark);">Rp 0</span>
+            </div>
+
+            <button class="btn btn-primary btn-block btn-lg" id="btn-confirm-order" style="margin-top: 1.5rem;">
+              Konfirmasi & Pesan Sekarang 🚀
+            </button>
+
+            <div
+              style="margin-top: 1rem; text-align: center; font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
+              <span>🔒 Transaksi terlindungi & terverifikasi sistem sekolah</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- =======================================================
+       PAGE 4: HALAMAN STATUS PESANAN (LIVE ORDER TRACKING)
+       ======================================================= -->
+  <section id="view-status" class="page-view status-page" style="display: none;">
+    <div class="container">
+
+      <div class="ticket-wrapper">
+
+        <!-- Live Status Digital Ticket -->
+        <div class="ticket-card" id="digital-ticket-card">
+          <div class="ticket-notch-left"></div>
+          <div class="ticket-notch-right"></div>
+
+          <!-- Ticket Header with Big Queue Number -->
+          <div class="ticket-header">
+            <div class="ticket-header-title">TIKET ANTREAN DIGITAL SMARTCANTEEN</div>
+            <div class="queue-number-huge" id="ticket-queue-number">#A-024</div>
+            <div class="ticket-subtitle" id="ticket-student-info">Atas Nama: <strong>Natania Oktaviani</strong> (XI MIPA
+              1)</div>
+          </div>
+
+          <div class="ticket-divider-line"></div>
+
+          <div class="ticket-body">
+
+            <!-- Ready Notification Banner (conditionally active) -->
+            <div id="ready-notification-alert" class="ready-pickup-alert" style="display: none;">
+              <div class="bell-icon">🔔</div>
+              <div>
+                <h5>Hore! Makananmu Sudah Siap Diambil!</h5>
+                <p>Silakan menuju konter pengambilan di <strong>Stan 1 (Dapur Bu Siti)</strong> dan tunjukkan tiket ini.
+                </p>
+              </div>
+            </div>
+
+            <!-- Stepper Progress Tracker -->
+            <div class="stepper-container">
+              <div class="stepper-list" id="order-stepper-list">
+                <div class="stepper-progress-bar" id="stepper-bar-fill" style="width: 33%;"></div>
+
+                <div class="step-item done" id="step-node-1">
+                  <div class="step-circle">1</div>
+                  <div class="step-label">Diterima</div>
+                </div>
+
+                <div class="step-item active" id="step-node-2">
+                  <div class="step-circle">2</div>
+                  <div class="step-label">Sedang Disiapkan</div>
+                </div>
+
+                <div class="step-item" id="step-node-3">
+                  <div class="step-circle">3</div>
+                  <div class="step-label">Siap Diambil</div>
+                </div>
+
+                <div class="step-item" id="step-node-4">
+                  <div class="step-circle">4</div>
+                  <div class="step-label">Selesai</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Details Box -->
+            <div class="order-detail-box">
+              <div class="order-detail-row">
+                <span style="color: var(--text-muted);">Status Saat Ini:</span>
+                <span id="ticket-status-badge" class="badge badge-warning">Sedang Disiapkan</span>
+              </div>
+              <div class="order-detail-row">
+                <span style="color: var(--text-muted);">Estimasi Waktu Tunggu:</span>
+                <strong id="ticket-estimated-time" style="color: var(--accent-dark);">~5 Menit Lagi</strong>
+              </div>
+              <div class="order-detail-row">
+                <span style="color: var(--text-muted);">Waktu Pengambilan:</span>
+                <span id="ticket-pickup-slot" style="font-weight: 600;">Istirahat 1 (09.45 - 10.15)</span>
+              </div>
+              <div class="order-detail-row">
+                <span style="color: var(--text-muted);">Metode Pembayaran:</span>
+                <span id="ticket-payment-method" style="font-weight: 600;">SmartPay (Lunas)</span>
+              </div>
+              <div class="order-detail-row"
+                style="border-top: 1px dashed var(--border-color); padding-top: 0.6rem; margin-top: 0.6rem;">
+                <span style="color: var(--text-muted);">Rincian Menu:</span>
+                <span id="ticket-items-summary" style="font-weight: 700; text-align: right;">1x Ayam Geprek, 1x Es
+                  Teh</span>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm" id="btn-print-ticket">
+                🖨️ Cetak / Simpan Tiket
+              </button>
+              <button class="btn btn-primary btn-sm" id="btn-order-again">
+                🍔 Pesan Makanan Lain
+              </button>
+            </div>
+
+            <!-- Real-time Status Simulator for Demo/Testing -->
+            <div class="simulator-box">
+              <h6>🎛️ Simulator Pengujian Status Real-time (Untuk Penguji)</h6>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                Klik tombol di bawah ini untuk mensimulasikan perubahan status pesanan secara langsung:
+              </p>
+              <div class="simulator-btn-group">
+                <button class="btn btn-secondary btn-sm" id="sim-btn-terima">1. Diterima</button>
+                <button class="btn btn-secondary btn-sm" id="sim-btn-masak">2. Masak (Disiapkan)</button>
+                <button class="btn btn-accent btn-sm" id="sim-btn-siap">3. 🔔 Siap Diambil!</button>
+                <button class="btn btn-primary btn-sm" id="sim-btn-selesai">4. Selesai</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- =======================================================
+       PAGE 5: DASHBOARD PENGELOLA KANTIN
+       ======================================================= -->
+  <section id="view-dashboard" class="page-view admin-page" style="display: none;">
+    <div class="container">
+
+      <!-- Dashboard Top Header -->
+      <div class="dashboard-header">
+        <div class="dashboard-title">
+          <h2>Dashboard Operasional Kantin 👨‍🍳</h2>
+          <p>Pantau pesanan masuk secara real-time, antrean dapur, dan omzet penjualan hari ini.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary btn-sm" id="btn-quick-to-stock">
+            📦 Kelola Stok
+          </button>
+          <button class="btn btn-primary btn-sm" id="btn-quick-to-finance">
+            📈 Laporan Keuangan
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 KPI Metrics Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Penjualan Hari Ini</span>
+            <div class="icon-wrap green">💰</div>
+          </div>
+          <div class="metric-val" id="metric-today-sales">Rp 245.000</div>
+          <div class="metric-sub trend-up">
+            <span>↑ 18.5%</span> dibanding kemarin
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Pesanan Masuk</span>
+            <div class="icon-wrap orange">⏳</div>
+          </div>
+          <div class="metric-val" id="metric-pending-orders">2 Pesanan</div>
+          <div class="metric-sub" style="color: var(--accent-dark); font-weight: 600;">
+            Perlu segera diproses
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Pesanan Selesai</span>
+            <div class="icon-wrap blue">✅</div>
+          </div>
+          <div class="metric-val" id="metric-completed-orders">14 Pesanan</div>
+          <div class="metric-sub">
+            Telah diambil oleh siswa
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Stok Hampir Habis</span>
+            <div class="icon-wrap red">⚠️</div>
+          </div>
+          <div class="metric-val" id="metric-critical-stock" style="color: var(--danger);">2 Menu</div>
+          <div class="metric-sub">
+            Perlu restock bahan
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart and Live Orders Table Layout -->
+      <div class="dashboard-grid-layout">
+
+        <!-- Interactive Chart Card -->
+        <div class="chart-card">
+          <div class="card-top-head">
+            <div>
+              <h4>Grafik Penjualan & Jam Sibuk Kantin</h4>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">Pola pesanan siswa berdasarkan jam operasional
+                sekolah</p>
+            </div>
+            <span class="badge badge-success">Hari Ini</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="sales-canvas-chart" width="600" height="240"></canvas>
+          </div>
+        </div>
+
+        <!-- Stock Alert Quick Box -->
+        <div class="table-card">
+          <div class="card-top-head">
+            <h4>Peringatan Stok Menipis</h4>
+            <span class="badge badge-warning" id="alert-stock-count-badge">2 Item</span>
+          </div>
+          <div id="dashboard-stock-alerts-list" style="display: flex; flex-direction: column; gap: 0.85rem;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Live Kitchen Order Queue Board -->
+      <div class="table-card">
+        <div class="card-top-head">
+          <div>
+            <h4>Antrean Pesanan Masuk (Live Kitchen Queue)</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Update status memasak agar siswa dapat notifikasi
+              siap ambil</p>
+          </div>
+          <div class="role-switcher-group">
+            <button class="role-btn active order-filter-btn" data-status="all">Semua</button>
+            <button class="role-btn order-filter-btn" data-status="active">Aktif</button>
+            <button class="role-btn order-filter-btn" data-status="selesai">Selesai</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="order-table">
+            <thead>
+              <tr>
+                <th>No. Antrean</th>
+                <th>Siswa & Kelas</th>
+                <th>Menu Pesanan</th>
+                <th>Slot Waktu</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Aksi Operator</th>
+              </tr>
+            </thead>
+            <tbody id="admin-orders-tbody">
+              <!-- Rendered dynamically by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- =======================================================
+       PAGE 6: HALAMAN MANAJEMEN STOK
+       ======================================================= -->
+  <section id="view-stock" class="page-view stock-page" style="display: none;">
+    <div class="container">
+
+      <!-- Top Bar -->
+      <div class="stock-control-bar">
+        <div>
+          <h2 style="font-size: 1.75rem; font-weight: 800; color: var(--text-main);">
+            Manajemen Stok & Menu Kantin 📦
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.92rem;">
+            Perbarui jumlah porsi tersedia secara real-time untuk mencegah siswa memesan menu yang kosong.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-primary btn-sm" id="btn-open-add-menu-modal">
+            + Tambah Menu Baru
+          </button>
+        </div>
+      </div>
+
+      <!-- Stock Table Card -->
+      <div class="stock-table-card">
+        <div style="overflow-x: auto;">
+          <table class="stock-table">
+            <thead>
+              <tr>
+                <th>Menu Makanan</th>
+                <th>Kategori</th>
+                <th>Harga Satuan</th>
+                <th>Stok Tersedia</th>
+                <th>Status Stok</th>
+                <th>Penyesuaian Cepat</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="stock-tbody">
+              <!-- Rendered dynamically by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- =======================================================
+       PAGE 7: HALAMAN LAPORAN KEUANGAN
+       ======================================================= -->
+  <section id="view-finance" class="page-view finance-page" style="display: none;">
+    <div class="container">
+
+      <!-- Header with Time Range Filter -->
+      <div class="dashboard-header">
+        <div>
+          <h2 style="font-size: 1.75rem; font-weight: 800; color: var(--text-main);">
+            Laporan Keuangan & Transaksi 📈
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.92rem;">
+            Rekapitulasi pendapatan kantin sekolah, produk terlaris, dan rincian transaksi kasir.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <div class="role-switcher-group">
+            <button class="role-btn active finance-period-btn" data-period="today">Hari Ini</button>
+            <button class="role-btn finance-period-btn" data-period="week">7 Hari Terakhir</button>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-export-csv">
+            📥 Download CSV
+          </button>
+          <button class="btn btn-primary btn-sm" id="btn-print-finance">
+            🖨️ Cetak Laporan
+          </button>
+        </div>
+      </div>
+
+      <!-- 3 Key Financial KPI Cards -->
+      <div class="finance-kpi-grid">
+        <div class="finance-kpi-card">
+          <h5>Total Pendapatan Hari Ini</h5>
+          <div class="amount" id="finance-today-rev">Rp 245.000</div>
+          <span class="badge badge-success">✓ Transaksi Lunas</span>
+        </div>
+
+        <div class="finance-kpi-card">
+          <h5>Pendapatan Minggu Ini</h5>
+          <div class="amount" id="finance-weekly-rev">Rp 1.420.000</div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Akumulasi 5 hari sekolah</span>
+        </div>
+
+        <div class="finance-kpi-card">
+          <h5>Proyeksi Pendapatan Bulan Ini</h5>
+          <div class="amount" id="finance-monthly-rev">Rp 5.860.000</div>
+          <span class="badge badge-info">Target Tercapai 92%</span>
+        </div>
+      </div>
+
+      <!-- Revenue Chart & Top Sellers Grid -->
+      <div class="dashboard-grid-layout">
+
+        <!-- Revenue Bar Chart -->
+        <div class="chart-card">
+          <div class="card-top-head">
+            <div>
+              <h4>Grafik Pendapatan Mingguan</h4>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">Tren omzet harian kantin (Senin s/d Jumat)</p>
+            </div>
+            <span class="badge badge-success">Minggu Berjalan</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="finance-revenue-chart" width="600" height="240"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Selling Products Leaderboard -->
+        <div class="table-card">
+          <div class="card-top-head">
+            <h4>🏆 Produk Paling Banyak Terjual</h4>
+            <span class="badge badge-info">Best Sellers</span>
+          </div>
+          <ul class="top-seller-list" id="finance-top-sellers-list">
+            <!-- Rendered dynamically -->
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Detailed Transaction History Table -->
+      <div class="table-card">
+        <div class="card-top-head">
+          <div>
+            <h4>Riwayat Transaksi Masuk</h4>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">Catatan audit pembayaran siswa dari sistem
+              SmartPay, QRIS, dan Tunai</p>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="order-table">
+            <thead>
+              <tr>
+                <th>ID Transaksi</th>
+                <th>Tanggal & Jam</th>
+                <th>No. Antrean</th>
+                <th>Nama Siswa</th>
+                <th>Nominal</th>
+                <th>Metode Bayar</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="finance-transactions-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- =======================================================
+       SHOPPING CART SLIDE-OVER DRAWER (SISWA)
+       ======================================================= -->
+  <div class="cart-drawer-backdrop" id="cart-drawer-backdrop"></div>
+  <aside class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+      <h3><span>🛒</span> Keranjang Pesanan</h3>
+      <button class="close-cart-btn" id="btn-close-cart" title="Tutup Keranjang">&times;</button>
+    </div>
+
+    <div class="cart-body" id="cart-items-container">
+      <!-- Items rendered dynamically -->
+    </div>
+
+    <div class="cart-footer">
+      <div class="cart-subtotal-row">
+        <span class="cart-subtotal-label">Subtotal</span>
+        <span class="cart-subtotal-val" id="cart-drawer-subtotal">Rp 0</span>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" id="btn-checkout-from-drawer">
+        Lanjut ke Checkout 🚀
+      </button>
+    </div>
+  </aside>
+
+
+  <!-- =======================================================
+       MODAL: TAMBAH / EDIT MENU MAKANAN (PENGELOLA KANTIN)
+       ======================================================= -->
+  <div class="modal-backdrop" id="menu-modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 id="menu-modal-title">Tambah Menu Makanan Baru</h4>
+        <button class="close-cart-btn" id="btn-close-menu-modal">&times;</button>
+      </div>
+      <form id="menu-form">
+        <div class="modal-body">
+          <input type="hidden" id="menu-form-id">
+
+          <div class="form-group">
+            <label class="form-label" for="form-menu-name">Nama Makanan / Minuman *</label>
+            <input type="text" id="form-menu-name" class="form-input" placeholder="Contoh: Nasi Bakar Cumi Pedas"
+              required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="form-menu-category">Kategori *</label>
+              <select id="form-menu-category" class="form-input" required>
+                <option value="makanan-berat">🍛 Makanan Berat</option>
+                <option value="camilan">🥟 Camilan & Snack</option>
+                <option value="minuman">🥤 Minuman Segar</option>
+                <option value="paket-hemat">⭐ Paket Hemat</option>
+                <option value="sehat">🥗 Menu Sehat</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="form-menu-price">Harga (Rp) *</label>
+              <input type="number" id="form-menu-price" class="form-input" placeholder="15000" min="1000" step="500"
+                required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="form-menu-stock">Jumlah Stok Awal *</label>
+              <input type="number" id="form-menu-stock" class="form-input" placeholder="25" min="0" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="form-menu-preptime">Estimasi Masak</label>
+              <input type="text" id="form-menu-preptime" class="form-input" placeholder="5-7 menit" value="5-7 menit">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="form-menu-desc">Deskripsi Menu</label>
+            <textarea id="form-menu-desc" class="form-input" rows="2"
+              placeholder="Jelaskan kelezatan atau isi menu..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="form-menu-image">Pilihan Gambar Menu</label>
+            <select id="form-menu-image" class="form-input">
+              <option value="assets/images/ayam-geprek.jpg">Ayam Geprek Sambal Bawang</option>
+              <option value="assets/images/mie-bakso.jpg">Mie Ayam Bakso Hangat</option>
+              <option value="assets/images/siomay.jpg">Siomay Bandung Bumbu Kacang</option>
+              <option value="assets/images/es-teh.jpg">Es Teh Manis Segar Jumbo</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-menu-modal">Batal</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btn-save-menu-submit">Simpan Menu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- =======================================================
+       MODAL: DETAIL MENU MAKANAN (SISWA)
+       ======================================================= -->
+  <div class="modal-backdrop" id="food-detail-modal-backdrop">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-header">
+        <h4 id="detail-modal-title">Detail Makanan</h4>
+        <button class="close-cart-btn" id="btn-close-detail-modal">&times;</button>
+      </div>
+      <div class="modal-body" id="detail-modal-body">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer" id="detail-modal-footer">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =======================================================
+       TOAST NOTIFICATION CONTAINER
+       ======================================================= -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

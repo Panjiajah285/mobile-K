@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     if (audioCtx && audioCtx.state === 'suspended') {
-
+      audioCtx.resume();
     }
   }
 
@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Filter by Search Query
     if (searchQuery) {
-      items = items.filter(it =>
+      items = items.filter(it => 
         it.name.toLowerCase().includes(searchQuery) ||
         it.description.toLowerCase().includes(searchQuery) ||
         it.stan.toLowerCase().includes(searchQuery)
@@ -1410,7 +1410,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnExportCsv.addEventListener('click', () => {
     const summary = store.getFinancialSummary(activePeriod);
     const headers = "ID Transaksi,Tanggal,Jam,Nomor Antrean,Nama Siswa,Nominal (Rp),Metode Bayar,Status\n";
-    const rows = summary.filteredLogs.map(l =>
+    const rows = summary.filteredLogs.map(l => 
       `"${l.id}","${l.date}","${l.time}","${l.queue}","${l.student}",${l.amount},"${l.method}","${l.status}"`
     ).join("\n");
 

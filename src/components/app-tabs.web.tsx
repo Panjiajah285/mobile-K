@@ -1,19 +1,19 @@
 import {
-  Tabs,
   TabList,
-  TabTrigger,
-  TabSlot,
-  TabTriggerSlotProps,
   TabListProps,
+  Tabs,
+  TabSlot,
+  TabTrigger,
+  TabTriggerSlotProps,
 } from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
-
-import { ExternalLink } from './external-link';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
+import { useState } from 'react';
+import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useCanteen } from '@/context/CanteenContext';
+import { LoginModal } from './LoginModal';
+import { ThemedText } from './themed-text';
+import { ThemedView } from './themed-view';
 
 export default function AppTabs() {
   return (
@@ -22,10 +22,13 @@ export default function AppTabs() {
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="home" href="/" asChild>
-            <TabButton>Home</TabButton>
+            <TabButton>🍱 Menu</TabButton>
           </TabTrigger>
-          <TabTrigger name="explore" href="/explore" asChild>
-            <TabButton>Explore</TabButton>
+          <TabTrigger name="antrean" href={"/antrean" as any} asChild>
+            <TabButton>📋 Status Antrean</TabButton>
+          </TabTrigger>
+          <TabTrigger name="pengelola" href={"/pengelola" as any} asChild>
+            <TabButton>👨‍🍳 Pengelola Kantin</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -39,7 +42,7 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
         style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
+        <ThemedText type="smallBold" themeColor={isFocused ? 'text' : 'textSecondary'}>
           {children}
         </ThemedText>
       </ThemedView>
@@ -50,66 +53,153 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 export function CustomTabList(props: TabListProps) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const { user, role, logout, balance } = useCanteen();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   return (
-    <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
-        </ThemedText>
+    <>
+      <View {...props} style={styles.tabListContainer}>
+        <ThemedView type="backgroundElement" style={styles.innerContainer}>
+          <ThemedView style={styles.brandGroup}>
+            <ThemedText type="subtitle" style={styles.brandText}>
+              ⚡ SmartCanteen
+            </ThemedText>
+            {role === 'siswa' && (
+              <View style={styles.balanceBadge}>
+                <ThemedText style={styles.balanceText}>
+                  💳 Saldo: Rp {balance.toLocaleString('id-ID')}
+                </ThemedText>
+              </View>
+            )}
+          </ThemedView>
 
-        {props.children}
+          {props.children}
 
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
-      </ThemedView>
-    </View>
+          {user ? (
+            <View style={styles.userBadgeGroup}>
+              <View style={styles.userInfoPill}>
+                <ThemedText style={styles.userNameText}>
+                  {user.role === 'siswa' ? '🎓' : '👨‍🍳'} {user.name}
+                </ThemedText>
+              </View>
+              <Pressable
+                onPress={() => setIsLoginModalOpen(true)}
+                style={styles.switchRoleBtn}>
+                <ThemedText style={styles.switchRoleBtnText}>Ganti Login 🔄</ThemedText>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => setIsLoginModalOpen(true)}
+              style={styles.loginBtn}>
+              <ThemedText style={styles.loginBtnText}>🔐 Login / Masuk</ThemedText>
+            </Pressable>
+          )}
+        </ThemedView>
+      </View>
+
+      <LoginModal
+        visible={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   tabListContainer: {
     position: 'absolute',
+    top: 0,
     width: '100%',
     padding: Spacing.three,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    zIndex: 100,
   },
   innerContainer: {
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
+    paddingHorizontal: Spacing.four,
     borderRadius: Spacing.five,
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  brandGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginRight: 'auto',
+    backgroundColor: 'transparent',
   },
   brandText: {
-    marginRight: 'auto',
+    color: '#059669',
+    fontSize: 16,
+  },
+  balanceBadge: {
+    backgroundColor: '#d1fae5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  balanceText: {
+    color: '#047857',
+    fontSize: 12,
+    fontWeight: '600',
   },
   pressed: {
     opacity: 0.7,
   },
   tabButtonView: {
-    paddingVertical: Spacing.one,
+    paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
   },
-  externalPressable: {
+  userBadgeGroup: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
+    gap: 8,
+    marginLeft: Spacing.two,
+  },
+  userInfoPill: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  userNameText: {
+    color: '#0f172a',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  switchRoleBtn: {
+    backgroundColor: '#10b981',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  switchRoleBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  loginBtn: {
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    marginLeft: Spacing.two,
+  },
+  loginBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

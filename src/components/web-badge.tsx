@@ -14,7 +14,7 @@ export function WebBadge() {
     <ThemedView style={styles.container}>
       <ThemedText type="code" themeColor="textSecondary" style={styles.versionText}>
         v{version}
-      </ThemedText>
+      </ThemedText> 
       <Image
         source={
           scheme === 'dark'

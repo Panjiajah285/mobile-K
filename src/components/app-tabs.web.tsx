@@ -11,7 +11,9 @@ import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCanteen } from '@/context/CanteenContext';
+import { JwtTokenInspectorModal } from './JwtTokenInspectorModal';
 import { LoginModal } from './LoginModal';
+import { TopUpModal } from './TopUpModal';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
@@ -29,6 +31,12 @@ export default function AppTabs() {
           </TabTrigger>
           <TabTrigger name="pengelola" href={"/pengelola" as any} asChild>
             <TabButton>👨‍🍳 Pengelola Kantin</TabButton>
+          </TabTrigger>
+          <TabTrigger name="pengaturan" href={"/pengaturan" as any} asChild>
+            <TabButton>⚙️ Profil & Setelan</TabButton>
+          </TabTrigger>
+          <TabTrigger name="explore" href={"/explore" as any} asChild>
+            <TabButton>ℹ️ Panduan</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -53,8 +61,10 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 export function CustomTabList(props: TabListProps) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-  const { user, role, logout, balance } = useCanteen();
+  const { user, role, balance, token } = useCanteen();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
+  const [isJwtModalOpen, setIsJwtModalOpen] = useState(false);
 
   return (
     <>
@@ -65,12 +75,21 @@ export function CustomTabList(props: TabListProps) {
               ⚡ SmartCanteen
             </ThemedText>
             {role === 'siswa' && (
-              <View style={styles.balanceBadge}>
+              <Pressable
+                onPress={() => setIsTopUpModalOpen(true)}
+                style={styles.balanceBadge}>
                 <ThemedText style={styles.balanceText}>
-                  💳 Saldo: Rp {balance.toLocaleString('id-ID')}
+                  💳 Saldo: Rp {balance.toLocaleString('id-ID')} <ThemedText style={styles.topUpHint}>+ Isi</ThemedText>
                 </ThemedText>
-              </View>
+              </Pressable>
             )}
+            <Pressable
+              onPress={() => setIsJwtModalOpen(true)}
+              style={styles.jwtBadge}>
+              <ThemedText style={styles.jwtBadgeText}>
+                🔑 JWT {token ? '● Aktif' : '○ Kosong'}
+              </ThemedText>
+            </Pressable>
           </ThemedView>
 
           {props.children}
@@ -101,6 +120,16 @@ export function CustomTabList(props: TabListProps) {
       <LoginModal
         visible={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      <TopUpModal
+        visible={isTopUpModalOpen}
+        onClose={() => setIsTopUpModalOpen(false)}
+      />
+
+      <JwtTokenInspectorModal
+        visible={isJwtModalOpen}
+        onClose={() => setIsJwtModalOpen(false)}
       />
     </>
   );
@@ -142,17 +171,38 @@ const styles = StyleSheet.create({
   brandText: {
     color: '#059669',
     fontSize: 16,
+    fontWeight: '800',
   },
   balanceBadge: {
     backgroundColor: '#d1fae5',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
   },
   balanceText: {
     color: '#047857',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  topUpHint: {
+    color: '#065f46',
+    fontWeight: '900',
+    backgroundColor: '#a7f3d0',
+    paddingHorizontal: 4,
+    borderRadius: 4,
+  },
+  jwtBadge: {
+    backgroundColor: '#0f172a',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  jwtBadgeText: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: '800',
   },
   pressed: {
     opacity: 0.7,
@@ -180,7 +230,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   switchRoleBtn: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#059669',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,

@@ -26,17 +26,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose }) => {
   const [namaPengelola, setNamaPengelola] = useState('');
   const [passwordPengelola, setPasswordPengelola] = useState('');
 
-  const handleLogin = (demoRole?: 'siswa' | 'pengelola') => {
+  const handleLogin = async (demoRole?: 'siswa' | 'pengelola') => {
     const roleToUse = demoRole || selectedRole;
 
     if (roleToUse === 'siswa') {
       const finalNama = namaSiswa.trim() || 'Natania Oktaviani';
       const finalNim = nimSiswa.trim() || '202610192';
-      login(finalNama, finalNim, 'siswa');
+      await login(finalNama, finalNim, 'siswa');
     } else {
       const finalNama = namaPengelola.trim() || 'Bu Siti (Dapur Bu Siti)';
       const finalPass = passwordPengelola || '123456';
-      login(finalNama, finalPass, 'pengelola');
+      await login(finalNama, finalPass, 'pengelola');
     }
 
     onClose();

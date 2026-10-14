@@ -1,3 +1,4 @@
+import { JwtTokenInspectorModal } from '@/components/JwtTokenInspectorModal';
 import { LoginModal } from '@/components/LoginModal';
 import { TopUpModal } from '@/components/TopUpModal';
 import { useCanteen } from '@/context/CanteenContext';
@@ -57,6 +58,7 @@ export default function HomeScreen() {
   const [isCartVisible, setIsCartVisible] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
+  const [isJwtModalOpen, setIsJwtModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('SmartPay (Saldo Kartu)');
   const [pickupSlot, setPickupSlot] = useState('Istirahat 1 (09.45 - 10.15)');
   const [editingNoteItemId, setEditingNoteItemId] = useState<string | null>(null);
@@ -177,6 +179,22 @@ export default function HomeScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+
+          {/* JWT Token Live Indicator Strip */}
+          <View style={styles.jwtBar}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.jwtStatusDot}>●</Text>
+                <Text style={styles.jwtLabel}>JWT Bearer Token Otentikasi</Text>
+              </View>
+              <Text style={styles.jwtValue} numberOfLines={1}>
+                {token ? token : 'Belum ada token (Silakan login)'}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setIsJwtModalOpen(true)} style={styles.jwtInspectBtn}>
+              <Text style={styles.jwtInspectBtnText}>Inspeksi 🔑</Text>
+            </TouchableOpacity>
           </View>
 
           {/* E-Wallet Strip for Students */}
@@ -332,8 +350,8 @@ export default function HomeScreen() {
                       item.stock === 0
                         ? styles.stockBadgeOut
                         : item.stock <= 5
-                        ? styles.stockBadgeLow
-                        : styles.stockBadgeOk,
+                          ? styles.stockBadgeLow
+                          : styles.stockBadgeOk,
                     ]}>
                     <Text style={styles.stockBadgeText}>
                       {item.stock === 0 ? 'Habis' : `Sisa ${item.stock}`}
@@ -372,6 +390,12 @@ export default function HomeScreen() {
                     </View>
 
                     <View style={styles.cardActionsRow}>
+                      <TouchableOpacity
+                        onPress={() => handleInspectMenu(item)}
+                        style={styles.testApiBtn}>
+                        <Text style={styles.testApiBtnText}>🔑 Tes Token</Text>
+                      </TouchableOpacity>
+
                       {inCart ? (
                         <View style={styles.stepperInCard}>
                           <TouchableOpacity

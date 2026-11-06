@@ -7,12 +7,13 @@ import {
   TabTriggerSlotProps,
 } from 'expo-router/ui';
 import { useState } from 'react';
-import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCanteen } from '@/context/CanteenContext';
 import { JwtTokenInspectorModal } from './JwtTokenInspectorModal';
 import { LoginModal } from './LoginModal';
+import { ThemeModal } from './ThemeModal';
 import { TopUpModal } from './TopUpModal';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
@@ -45,8 +46,10 @@ export default function AppTabs() {
 }
 
 export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+  const { ref: _ref, ...pressableProps } = props;
+
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable {...pressableProps} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
         style={styles.tabButtonView}>
@@ -59,21 +62,29 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 }
 
 export function CustomTabList(props: TabListProps) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-  const { user, role, balance, token } = useCanteen();
+  const { user, role, balance, token, activeTheme } = useCanteen();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
   const [isJwtModalOpen, setIsJwtModalOpen] = useState(false);
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
 
   return (
     <>
       <View {...props} style={styles.tabListContainer}>
         <ThemedView type="backgroundElement" style={styles.innerContainer}>
           <ThemedView style={styles.brandGroup}>
-            <ThemedText type="subtitle" style={styles.brandText}>
+            <ThemedText type="subtitle" style={[styles.brandText, { color: activeTheme.primary }]}>
               ⚡ SmartCanteen
             </ThemedText>
+
+            <Pressable
+              onPress={() => setIsThemeModalOpen(true)}
+              style={[styles.themePillWeb, { backgroundColor: activeTheme.primarySoft, borderColor: activeTheme.primary }]}>
+              <ThemedText style={[styles.themePillWebText, { color: activeTheme.primaryDark }]}>
+                {activeTheme.icon} {activeTheme.name}
+              </ThemedText>
+            </Pressable>
+
             {role === 'siswa' && (
               <Pressable
                 onPress={() => setIsTopUpModalOpen(true)}
@@ -98,24 +109,29 @@ export function CustomTabList(props: TabListProps) {
             <View style={styles.userBadgeGroup}>
               <View style={styles.userInfoPill}>
                 <ThemedText style={styles.userNameText}>
-                  {user.role === 'siswa' ? '🎓' : '👨‍🍳'} {user.name}
+                  {user.avatar || (user.role === 'siswa' ? '🎓' : '👨‍🍳')} {user.name}
                 </ThemedText>
               </View>
               <Pressable
                 onPress={() => setIsLoginModalOpen(true)}
-                style={styles.switchRoleBtn}>
+                style={[styles.switchRoleBtn, { backgroundColor: activeTheme.primary }]}>
                 <ThemedText style={styles.switchRoleBtnText}>Ganti Login 🔄</ThemedText>
               </Pressable>
             </View>
           ) : (
             <Pressable
               onPress={() => setIsLoginModalOpen(true)}
-              style={styles.loginBtn}>
+              style={[styles.loginBtn, { backgroundColor: activeTheme.primary }]}>
               <ThemedText style={styles.loginBtnText}>🔐 Login / Masuk</ThemedText>
             </Pressable>
           )}
         </ThemedView>
       </View>
+
+      <ThemeModal
+        visible={isThemeModalOpen}
+        onClose={() => setIsThemeModalOpen(false)}
+      />
 
       <LoginModal
         visible={isLoginModalOpen}
@@ -251,5 +267,15 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  themePillWeb: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  themePillWebText: {
+    fontSize: 11,
+    fontWeight: '800',
   },
 });

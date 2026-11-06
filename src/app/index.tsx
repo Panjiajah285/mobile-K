@@ -1,6 +1,9 @@
 import { JwtTokenInspectorModal } from '@/components/JwtTokenInspectorModal';
 import { LoginModal } from '@/components/LoginModal';
+import { MenuItemDetailModal } from '@/components/MenuItemDetailModal';
+import { ThemeModal } from '@/components/ThemeModal';
 import { TopUpModal } from '@/components/TopUpModal';
+import { MenuItem } from '@/constants/canteenData';
 import { useCanteen } from '@/context/CanteenContext';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -19,12 +22,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CATEGORIES = [
-  { id: 'semua', label: 'Semua Menu', icon: '🍽️', color: '#4f46e5', lightBg: '#eef2ff', borderColor: '#c7d2fe' },
+  { id: 'semua', label: 'Semua Menu', icon: '🍽️', color: '#6366f1', lightBg: '#eef2ff', borderColor: '#c7d2fe' },
   { id: 'makanan-berat', label: 'Makanan Berat', icon: '🍲', color: '#ea580c', lightBg: '#fff7ed', borderColor: '#fed7aa' },
   { id: 'camilan', label: 'Camilan & Snack', icon: '🥟', color: '#d97706', lightBg: '#fffbeb', borderColor: '#fde68a' },
   { id: 'minuman', label: 'Minuman Segar', icon: '🥤', color: '#0284c7', lightBg: '#f0f9ff', borderColor: '#bae6fd' },
-  { id: 'paket-hemat', label: 'Paket Hemat Combo', icon: '⭐', color: '#7c3aed', lightBg: '#faf5ff', borderColor: '#e9d5ff' },
-  { id: 'sehat', label: 'Menu Sehat & Diet', icon: '🥗', color: '#059669', lightBg: '#ecfdf5', borderColor: '#a7f3d0' },
+  { id: 'paket-hemat', label: 'Paket Hemat Combo', icon: '⭐', color: '#8b5cf6', lightBg: '#faf5ff', borderColor: '#e9d5ff' },
+  { id: 'sehat', label: 'Menu Sehat & Diet', icon: '🥗', color: '#10b981', lightBg: '#ecfdf5', borderColor: '#a7f3d0' },
 ];
 
 const QUICK_FILTERS = [
@@ -32,6 +35,37 @@ const QUICK_FILTERS = [
   { id: 'terlaris', label: '🔥 Paling Laris' },
   { id: 'rating', label: '⭐ Rating 4.8+' },
   { id: 'murah', label: '💸 Di Bawah 15rb' },
+  { id: 'cepat', label: '⚡ Siap < 5 Mnt' },
+];
+
+const PROMO_BANNERS = [
+  {
+    id: 1,
+    tag: '⚡ PROMO HARI INI',
+    title: 'Diskon 20% Paket Hemat Combo!',
+    desc: 'Nasi Ayam Geprek Sambal Bawang + Es Teh Manis Jumbo hanya Rp 18.000. Kuota terbatas!',
+    code: 'SMARTHEMAT',
+    bg: '#0f172a',
+    accent: '#f59e0b',
+  },
+  {
+    id: 2,
+    tag: '🚀 BEBAS ANTRE',
+    title: 'Pre-Order Pagi, Ambil Pas Istirahat!',
+    desc: 'Pesan sekarang sebelum bel berbunyi. Makanan sudah siap hangat di stan pilihan Anda.',
+    code: 'BEBASANTRE',
+    bg: '#1e1b4b',
+    accent: '#38bdf8',
+  },
+  {
+    id: 3,
+    tag: '💳 SMARTPAY CASHBACK',
+    title: 'Ekstra Saldo 10% Pakai RFID',
+    desc: 'Bayar otomatis tanpa uang kembalian dan nikmati poin reward setiap transaksi kantin!',
+    code: 'PAY10',
+    bg: '#14271c',
+    accent: '#34d399',
+  },
 ];
 
 const NOTE_CHIPS = ['Pedas', 'Tidak Pedas', 'Kuah Dipisah', 'Sedikit Es', 'Bungkus'];
@@ -41,7 +75,6 @@ export default function HomeScreen() {
     user,
     role,
     token,
-    logout,
     inspectMenuWithToken,
     menu,
     cart,
@@ -50,6 +83,7 @@ export default function HomeScreen() {
     updateCartItemNote,
     checkout,
     balance,
+    activeTheme,
   } = useCanteen();
 
   const [selectedCategory, setSelectedCategory] = useState('semua');
@@ -59,9 +93,26 @@ export default function HomeScreen() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
   const [isJwtModalOpen, setIsJwtModalOpen] = useState(false);
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+  const [detailModalItem, setDetailModalItem] = useState<MenuItem | null>(null);
+
+  const [promoIndex, setPromoIndex] = useState(0);
+  const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('SmartPay (Saldo Kartu)');
   const [pickupSlot, setPickupSlot] = useState('Istirahat 1 (09.45 - 10.15)');
   const [editingNoteItemId, setEditingNoteItemId] = useState<string | null>(null);
+
+  // Voucher state
+  const [voucherCode, setVoucherCode] = useState('');
+  const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount: number } | null>(null);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 4 && hour < 11) return 'Selamat Pagi ☀️';
+    if (hour >= 11 && hour < 15) return 'Selamat Siang 🍛';
+    if (hour >= 15 && hour < 18) return 'Selamat Sore 🌇';
+    return 'Selamat Malam 🌙';
+  };
 
   const filteredMenu = menu.filter((item) => {
     const matchesCategory = selectedCategory === 'semua' || item.category === selectedCategory;
@@ -76,14 +127,46 @@ export default function HomeScreen() {
       matchesQuick = item.rating >= 4.8;
     } else if (activeQuickFilter === 'murah') {
       matchesQuick = item.price <= 15000;
+    } else if (activeQuickFilter === 'cepat') {
+      matchesQuick = item.prepTime.includes('2') || item.prepTime.includes('3') || item.prepTime.includes('5');
     }
 
     return matchesCategory && matchesSearch && matchesQuick;
   });
 
   const cartTotalCount = cart.reduce((sum, item) => sum + item.qty, 0);
-  const cartTotalPrice = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const rawCartTotalPrice = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const discountAmount = appliedVoucher ? appliedVoucher.discount : 0;
+  const cartTotalPrice = Math.max(0, rawCartTotalPrice - discountAmount);
   const isBalanceInsufficient = paymentMethod.includes('SmartPay') && balance < cartTotalPrice;
+
+  const handleApplyVoucher = () => {
+    const code = voucherCode.trim().toUpperCase();
+    if (!code) return;
+
+    if (code === 'SMARTHEMAT') {
+      setAppliedVoucher({ code: 'SMARTHEMAT', discount: 3000 });
+      const msg = 'Voucher SMARTHEMAT berhasil digunakan! Potongan diskon Rp 3.000.';
+      if (Platform.OS === 'web') alert(msg);
+      else Alert.alert('Voucher Berhasil 🎉', msg);
+    } else if (code === 'PAY10') {
+      const discount = Math.round(rawCartTotalPrice * 0.1);
+      setAppliedVoucher({ code: 'PAY10', discount });
+      const msg = `Voucher PAY10 berhasil digunakan! Cashback diskon 10% (Rp ${discount.toLocaleString('id-ID')}).`;
+      if (Platform.OS === 'web') alert(msg);
+      else Alert.alert('Voucher Berhasil 🎉', msg);
+    } else {
+      const msg = 'Kode voucher tidak valid atau sudah kadaluarsa. Coba gunakan SMARTHEMAT.';
+      if (Platform.OS === 'web') alert(msg);
+      else Alert.alert('Voucher Tidak Valid', msg);
+    }
+  };
+
+  const handleSimulateCardTap = () => {
+    const msg = `📡 Kartu RFID SmartPay (${user?.name || 'Siswa'}) terdeteksi di scanner kasir!\nSinyal: Kuat (NFC Aktif)\nSaldo Terdaftar: Rp ${balance.toLocaleString('id-ID')}`;
+    if (Platform.OS === 'web') alert(msg);
+    else Alert.alert('NFC SmartPay Terbaca ⚡', msg);
+  };
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
@@ -95,25 +178,20 @@ export default function HomeScreen() {
       return;
     }
 
-    const queueNum = checkout(paymentMethod, pickupSlot);
+    const queueNum = checkout(paymentMethod, pickupSlot, user?.name, user?.detail, discountAmount);
     setIsCartVisible(false);
+    setAppliedVoucher(null);
+    setVoucherCode('');
 
     const successMsg = `Pesanan Berhasil Disimpan!\nNomor Antrean Anda: ${queueNum}.\nSilakan pantau perkembangan pesanan Anda di tab Status Antrean.`;
     if (Platform.OS === 'web') alert(successMsg);
     else Alert.alert('Pesanan Diterima 🎉', successMsg);
   };
 
-  const handleLogoutWithTokenRefresh = async () => {
-    await logout();
-    const msg = 'Logout Berhasil!\nToken JWT lama telah dicabut (revoked) dan token sesi baru telah direfresh.';
-    if (Platform.OS === 'web') alert(msg);
-    else Alert.alert('Logout & Token Refreshed 🔄', msg);
-  };
-
   const handleInspectMenu = async (item: typeof menu[0]) => {
     const res = await inspectMenuWithToken(item.id);
     const alertMsg = res.success
-      ? `✅ [200 OK] Akses Endpoint 1 Menu Berhasil Terverifikasi!\n\n• Endpoint: GET /api/menu/${item.id}\n• Header: Authorization: Bearer ${token?.substring(0, 24)}...\n• Menu: ${res.data?.name}\n• Harga: Rp ${res.data?.price.toLocaleString('id-ID')}`
+      ? `✅ [200 OK] Akses Endpoint Menu Berhasil Terverifikasi!\n\n• Endpoint: GET /api/menu/${item.id}\n• Authorization: Bearer ${token?.substring(0, 24)}...\n• Menu: ${res.data?.name}\n• Harga: Rp ${res.data?.price.toLocaleString('id-ID')}`
       : `❌ [${res.status} Unauthorized]\n\n${res.message}`;
 
     if (Platform.OS === 'web') alert(alertMsg);
@@ -122,131 +200,154 @@ export default function HomeScreen() {
 
   const getRibbonForCategory = (cat: string, stock: number) => {
     if (stock === 0) return { label: '❌ HABIS', bg: '#ef4444' };
-    if (stock <= 5) return { label: '⚡ HAMPIR HABIS', bg: '#f59e0b' };
+    if (stock <= 5) return { label: '⚡ SISA ' + stock, bg: '#f59e0b' };
     switch (cat) {
       case 'paket-hemat':
-        return { label: '⭐ COMBO HEMAT', bg: '#7c3aed' };
+        return { label: '⭐ COMBO HEMAT', bg: '#8b5cf6' };
       case 'makanan-berat':
-        return { label: '🔥 BEST SELLER', bg: '#ea580c' };
+        return { label: '🔥 BEST SELLER', bg: activeTheme.primary };
       case 'minuman':
         return { label: '❄️ DINGIN SEGAR', bg: '#0284c7' };
       case 'sehat':
-        return { label: '🥗 SEHAT & FIT', bg: '#059669' };
+        return { label: '🥗 SEHAT & FIT', bg: '#10b981' };
       case 'camilan':
         return { label: '🥟 KRISPI GURIH', bg: '#d97706' };
       default:
-        return { label: '✨ PILIHAN SISWA', bg: '#4f46e5' };
+        return { label: '✨ PILIHAN SISWA', bg: '#6366f1' };
     }
   };
+
+  const currentPromo = PROMO_BANNERS[promoIndex];
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Top User & Wallet Dashboard Card */}
-        <View style={styles.accountCard}>
-          <View style={styles.accountTopRow}>
-            <TouchableOpacity
-              onPress={() => router.push('/pengaturan' as any)}
-              style={styles.avatarTouchRow}>
-              <View style={styles.userAvatarBox}>
-                <Text style={styles.userAvatarIcon}>
-                  {user ? (user.role === 'siswa' ? '🎓' : '👨‍🍳') : '👤'}
-                </Text>
-              </View>
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.accountName}>
-                  {user ? user.name : 'Pengunjung Tamu'}
-                </Text>
-                <Text style={styles.accountDetail}>
-                  {user ? user.detail : 'Login untuk memesan & simpan riwayat'}
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.accountActionsCol}>
-              <TouchableOpacity
-                onPress={() => router.push('/pengaturan' as any)}
-                style={styles.profileSettingBtn}>
-                <Text style={styles.profileSettingBtnText}>⚙️ Profil</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setIsLoginModalOpen(true)}
-                style={styles.loginTriggerBtn}>
-                <Text style={styles.loginTriggerBtnText}>
-                  {user ? '🔄 Ganti' : '🔐 Login'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* JWT Token Live Indicator Strip */}
-          <View style={styles.jwtBar}>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.jwtStatusDot}>●</Text>
-                <Text style={styles.jwtLabel}>JWT Bearer Token Otentikasi</Text>
-              </View>
-              <Text style={styles.jwtValue} numberOfLines={1}>
-                {token ? token : 'Belum ada token (Silakan login)'}
+        {/* Top Header Row with Time Greeting & Profile Navigation */}
+        <View style={styles.topHeader}>
+          <View style={styles.greetingGroup}>
+            <Text style={styles.greetingText}>{getGreeting()}</Text>
+            <Text style={styles.greetingName}>{user ? user.name : 'Siswa Tamu'} 👋</Text>
+            <View style={styles.roleTag}>
+              <View style={[styles.roleDot, { backgroundColor: activeTheme.primary }]} />
+              <Text style={styles.roleTagText}>
+                {user ? (user.role === 'siswa' ? 'Siswa Terverifikasi • XII MIPA 2' : 'Pengelola Stan Kantin') : 'Tamu'}
               </Text>
             </View>
-            <TouchableOpacity onPress={() => setIsJwtModalOpen(true)} style={styles.jwtInspectBtn}>
-              <Text style={styles.jwtInspectBtnText}>Inspeksi 🔑</Text>
+          </View>
+
+          <View style={styles.topHeaderActions}>
+            <TouchableOpacity
+              onPress={() => setIsThemeModalOpen(true)}
+              style={[styles.themeSwitcherBtn, { borderColor: activeTheme.primary, backgroundColor: activeTheme.primarySoft }]}>
+              <Text style={[styles.themeSwitcherText, { color: activeTheme.primaryDark }]}>
+                {activeTheme.icon} {activeTheme.name}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push('/pengaturan' as any)}
+              style={styles.profileAvatarBox}>
+              <Text style={styles.profileAvatarIcon}>{user?.avatar || (user?.role === 'pengelola' ? '👨‍🍳' : '🎓')}</Text>
             </TouchableOpacity>
           </View>
-
-          {/* E-Wallet Strip for Students */}
-          {role === 'siswa' && (
-            <View style={styles.walletStrip}>
-              <View>
-                <Text style={styles.walletTitle}>💳 Saldo SmartPay Siswa</Text>
-                <Text style={styles.walletAmount}>Rp {balance.toLocaleString('id-ID')}</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setIsTopUpModalOpen(true)}
-                style={styles.topUpButton}>
-                <Text style={styles.topUpButtonText}>⚡ Isi Saldo</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
 
-        {/* Hero Announcement Banner with Warm Colorful Food Theme */}
-        <View style={styles.heroBanner}>
-          <View style={styles.heroTextContainer}>
-            <View style={styles.heroBadgeRow}>
-              <View style={styles.heroBadgePill}>
-                <Text style={styles.heroBadge}>⚡ PRE-ORDER KANTIN SEKOLAH</Text>
+        {/* Virtual RFID SmartPay Card */}
+        {role === 'siswa' && (
+          <View style={[styles.virtualCard, { borderColor: activeTheme.primary }]}>
+            {/* Holographic Chip & Brand */}
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardChipBadge}>
+                <Text style={styles.cardChipIcon}>💳</Text>
+                <Text style={styles.cardChipText}>SmartPay RFID</Text>
+                <Text style={styles.nfcIcon}>📡</Text>
               </View>
-              <View style={styles.heroLivePill}>
-                <Text style={styles.heroLiveBadge}>● LIVE BUKA</Text>
-              </View>
+
+              <TouchableOpacity onPress={() => setIsJwtModalOpen(true)} style={styles.jwtMiniBadge}>
+                <Text style={styles.jwtMiniDot}>●</Text>
+                <Text style={styles.jwtMiniText}>JWT Sesi Aktif</Text>
+              </TouchableOpacity>
             </View>
 
-            <Text style={styles.heroTitle}>
-              Pesan Makanan Lezat, Nikmati Istirahat Tanpa Antre! 🍱
-            </Text>
-
-            <Text style={styles.heroSubtitle}>
-              Pilih menu dari stan Bu Siti, Mas Min, hingga Kang Asep. Makanan dimasak segar dan siap diambil tepat waktu.
-            </Text>
-
-            {/* Micro Highlights */}
-            <View style={styles.heroPerksRow}>
-              <View style={styles.heroPerkPill}>
-                <Text style={styles.heroPerkText}>⏱️ Hemat 20 Menit</Text>
+            {/* Balance & Visibility Toggle */}
+            <View style={styles.balanceRow}>
+              <View>
+                <Text style={styles.balanceLabel}>SALDO KARTU SISWA</Text>
+                <Text style={styles.balanceValue}>
+                  {isBalanceHidden ? 'Rp ••••••••' : `Rp ${balance.toLocaleString('id-ID')}`}
+                </Text>
               </View>
-              <View style={styles.heroPerkPill}>
-                <Text style={styles.heroPerkText}>💳 Bayar Praktis SmartPay</Text>
+
+              <TouchableOpacity
+                onPress={() => setIsBalanceHidden(!isBalanceHidden)}
+                style={styles.eyeBtn}>
+                <Text style={styles.eyeBtnText}>{isBalanceHidden ? '👁️ Tampilkan' : '🙈 Sembunyikan'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Card Holder & Quick Actions */}
+            <View style={styles.cardFooterRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardHolderLabel}>PEMEGANG KARTU</Text>
+                <Text style={styles.cardHolderName} numberOfLines={1}>
+                  {user ? user.name : 'Natania Oktaviani'} • {user?.nim || '202610192'}
+                </Text>
               </View>
-              <View style={styles.heroPerkPill}>
-                <Text style={styles.heroPerkText}>🔥 Bebas Antre</Text>
+
+              <View style={styles.cardActionGroup}>
+                <TouchableOpacity
+                  onPress={handleSimulateCardTap}
+                  style={styles.tapNfcBtn}>
+                  <Text style={styles.tapNfcBtnText}>⚡ Tap</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setIsTopUpModalOpen(true)}
+                  style={[styles.topUpBtn, { backgroundColor: activeTheme.primary }]}>
+                  <Text style={styles.topUpBtnText}>+ Isi Saldo</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
-        </View>
+        )}
+
+        {/* Dynamic Daily Promo Carousel */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => {
+            if (currentPromo.code === 'SMARTHEMAT') {
+              setVoucherCode('SMARTHEMAT');
+              setIsCartVisible(true);
+            } else {
+              setPromoIndex((prev) => (prev + 1) % PROMO_BANNERS.length);
+            }
+          }}
+          style={[styles.promoBannerCard, { backgroundColor: currentPromo.bg }]}>
+          <View style={styles.promoContent}>
+            <View style={styles.promoTagRow}>
+              <View style={[styles.promoTagPill, { backgroundColor: currentPromo.accent }]}>
+                <Text style={styles.promoTagText}>{currentPromo.tag}</Text>
+              </View>
+              <Text style={styles.promoTapHint}>Ketuk untuk geser promo ➔</Text>
+            </View>
+
+            <Text style={styles.promoTitle}>{currentPromo.title}</Text>
+            <Text style={styles.promoDesc}>{currentPromo.desc}</Text>
+
+            <View style={styles.promoDotsRow}>
+              {PROMO_BANNERS.map((_, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    styles.promoDot,
+                    idx === promoIndex && [styles.promoDotActive, { backgroundColor: currentPromo.accent }],
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+        </TouchableOpacity>
 
         {/* Search Input Bar */}
         <View style={styles.searchContainer}>
@@ -265,7 +366,7 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Quick Filter Chips (Paling Laris, Rating 4.8+, Murah) */}
+        {/* Quick Filter Chips */}
         <View style={styles.quickFiltersRow}>
           {QUICK_FILTERS.map((qf) => {
             const isQfActive = activeQuickFilter === qf.id;
@@ -273,8 +374,15 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={qf.id}
                 onPress={() => setActiveQuickFilter(qf.id)}
-                style={[styles.quickFilterChip, isQfActive && styles.quickFilterChipActive]}>
-                <Text style={[styles.quickFilterChipText, isQfActive && styles.quickFilterChipTextActive]}>
+                style={[
+                  styles.quickFilterChip,
+                  isQfActive && { backgroundColor: activeTheme.primary, borderColor: activeTheme.primary },
+                ]}>
+                <Text
+                  style={[
+                    styles.quickFilterChipText,
+                    isQfActive && { color: '#ffffff' },
+                  ]}>
                   {qf.label}
                 </Text>
               </TouchableOpacity>
@@ -296,7 +404,10 @@ export default function HomeScreen() {
                 onPress={() => setSelectedCategory(cat.id)}
                 style={[
                   styles.categoryPill,
-                  { borderColor: cat.borderColor, backgroundColor: isActive ? cat.color : cat.lightBg },
+                  {
+                    borderColor: isActive ? activeTheme.primary : cat.borderColor,
+                    backgroundColor: isActive ? activeTheme.primary : cat.lightBg,
+                  },
                 ]}>
                 <Text style={styles.categoryIcon}>{cat.icon}</Text>
                 <Text
@@ -315,23 +426,31 @@ export default function HomeScreen() {
         {/* Section Header */}
         <View style={styles.sectionHeader}>
           <View>
-            <Text style={styles.sectionTitle}>Pilihan Menu Kantin Hari Ini 🍱</Text>
+            <Text style={styles.sectionTitle}>Pilihan Menu Kantin 🍱</Text>
             <Text style={styles.sectionSubtitle}>
-              {filteredMenu.length} makanan & minuman segar siap disajikan untuk Anda
+              Menampilkan {filteredMenu.length} makanan & minuman siap saji
             </Text>
           </View>
         </View>
 
-        {/* Menu Items Cards with Appetizing Visual Accents */}
+        {/* Menu Items Grid */}
         <View style={styles.menuGrid}>
           {filteredMenu.map((item) => {
             const ribbon = getRibbonForCategory(item.category, item.stock);
             const inCart = cart.find((c) => c.id === item.id);
 
             return (
-              <View key={item.id} style={styles.card}>
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.9}
+                onPress={() => setDetailModalItem(item)}
+                style={styles.card}>
                 <View style={styles.cardImageContainer}>
-                  <Image source={item.image} style={styles.cardImage} resizeMode="cover" />
+                  <Image
+                    source={typeof item.image === 'string' ? { uri: item.image } : item.image}
+                    style={styles.cardImage}
+                    resizeMode="cover"
+                  />
 
                   {/* Top Floating Promo Ribbon */}
                   <View style={[styles.ribbonBadge, { backgroundColor: ribbon.bg }]}>
@@ -350,8 +469,8 @@ export default function HomeScreen() {
                       item.stock === 0
                         ? styles.stockBadgeOut
                         : item.stock <= 5
-                          ? styles.stockBadgeLow
-                          : styles.stockBadgeOk,
+                        ? styles.stockBadgeLow
+                        : styles.stockBadgeOk,
                     ]}>
                     <Text style={styles.stockBadgeText}>
                       {item.stock === 0 ? 'Habis' : `Sisa ${item.stock}`}
@@ -361,7 +480,9 @@ export default function HomeScreen() {
 
                 <View style={styles.cardContent}>
                   <View style={styles.stanRow}>
-                    <Text style={styles.cardStan}>🏪 {item.stan}</Text>
+                    <Text style={[styles.cardStan, { color: activeTheme.primaryDark }]}>
+                      🏪 {item.stan}
+                    </Text>
                     <View style={styles.prepTimeBadge}>
                       <Text style={styles.prepTimeText}>⏱️ {item.prepTime}</Text>
                     </View>
@@ -386,35 +507,41 @@ export default function HomeScreen() {
                   <View style={styles.cardFooter}>
                     <View>
                       <Text style={styles.cardPriceLabel}>Harga Porsi</Text>
-                      <Text style={styles.cardPrice}>Rp {item.price.toLocaleString('id-ID')}</Text>
+                      <Text style={[styles.cardPrice, { color: activeTheme.primary }]}>
+                        Rp {item.price.toLocaleString('id-ID')}
+                      </Text>
                     </View>
 
                     <View style={styles.cardActionsRow}>
                       <TouchableOpacity
                         onPress={() => handleInspectMenu(item)}
                         style={styles.testApiBtn}>
-                        <Text style={styles.testApiBtnText}>🔑 Tes Token</Text>
+                        <Text style={styles.testApiBtnText}>🔑 JWT</Text>
                       </TouchableOpacity>
 
                       {inCart ? (
-                        <View style={styles.stepperInCard}>
+                        <View style={[styles.stepperInCard, { borderColor: activeTheme.primary }]}>
                           <TouchableOpacity
                             onPress={() => updateCartQty(item.id, inCart.qty - 1)}
                             style={styles.stepperBtn}>
-                            <Text style={styles.stepperBtnText}>-</Text>
+                            <Text style={[styles.stepperBtnText, { color: activeTheme.primary }]}>-</Text>
                           </TouchableOpacity>
                           <Text style={styles.stepperQtyText}>{inCart.qty}</Text>
                           <TouchableOpacity
                             onPress={() => updateCartQty(item.id, inCart.qty + 1)}
                             style={styles.stepperBtn}>
-                            <Text style={styles.stepperBtnText}>+</Text>
+                            <Text style={[styles.stepperBtnText, { color: activeTheme.primary }]}>+</Text>
                           </TouchableOpacity>
                         </View>
                       ) : (
                         <TouchableOpacity
                           disabled={item.stock === 0}
                           onPress={() => addToCart(item)}
-                          style={[styles.addBtn, item.stock === 0 && styles.addBtnDisabled]}>
+                          style={[
+                            styles.addBtn,
+                            { backgroundColor: activeTheme.primary },
+                            item.stock === 0 && styles.addBtnDisabled,
+                          ]}>
                           <Text style={styles.addBtnText}>
                             {item.stock === 0 ? 'Habis' : '+ Pesan'}
                           </Text>
@@ -423,7 +550,7 @@ export default function HomeScreen() {
                     </View>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -433,12 +560,16 @@ export default function HomeScreen() {
 
       {/* Floating Bottom Cart Bar */}
       {cartTotalCount > 0 && (
-        <View style={styles.floatingCartBar}>
+        <View style={[styles.floatingCartBar, { backgroundColor: '#0f172a' }]}>
           <View>
-            <Text style={styles.cartBarCount}>🛒 {cartTotalCount} Makanan/Minuman di Keranjang</Text>
-            <Text style={styles.cartBarPrice}>Total: Rp {cartTotalPrice.toLocaleString('id-ID')}</Text>
+            <Text style={styles.cartBarCount}>🛒 {cartTotalCount} Item di Keranjang</Text>
+            <Text style={styles.cartBarPrice}>
+              Total: Rp {cartTotalPrice.toLocaleString('id-ID')}
+            </Text>
           </View>
-          <TouchableOpacity onPress={() => setIsCartVisible(true)} style={styles.checkoutBarBtn}>
+          <TouchableOpacity
+            onPress={() => setIsCartVisible(true)}
+            style={[styles.checkoutBarBtn, { backgroundColor: activeTheme.primary }]}>
             <Text style={styles.checkoutBarBtnText}>Lihat & Checkout ➔</Text>
           </TouchableOpacity>
         </View>
@@ -464,7 +595,7 @@ export default function HomeScreen() {
                   <View style={styles.cartRowTop}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.cartItemTitle}>{cartItem.name}</Text>
-                      <Text style={styles.cartItemPrice}>
+                      <Text style={[styles.cartItemPrice, { color: activeTheme.primary }]}>
                         Rp {cartItem.price.toLocaleString('id-ID')} / porsi
                       </Text>
                     </View>
@@ -497,7 +628,7 @@ export default function HomeScreen() {
                       <Text style={styles.notesLabel}>📝 Catatan Khusus untuk Dapur:</Text>
                       {editingNoteItemId !== cartItem.id && (
                         <TouchableOpacity onPress={() => setEditingNoteItemId(cartItem.id)}>
-                          <Text style={styles.editNoteBtnText}>
+                          <Text style={[styles.editNoteBtnText, { color: activeTheme.primary }]}>
                             {cartItem.note ? 'Ubah Catatan' : '+ Tambah Catatan'}
                           </Text>
                         </TouchableOpacity>
@@ -528,12 +659,12 @@ export default function HomeScreen() {
                         </View>
                         <TouchableOpacity
                           onPress={() => setEditingNoteItemId(null)}
-                          style={styles.saveNoteBtn}>
+                          style={[styles.saveNoteBtn, { backgroundColor: activeTheme.primary }]}>
                           <Text style={styles.saveNoteBtnText}>✓ Simpan Catatan</Text>
                         </TouchableOpacity>
                       </View>
                     ) : cartItem.note ? (
-                      <Text style={styles.noteSavedText}>"{cartItem.note}"</Text>
+                      <Text style={styles.noteSavedText}>&quot;{cartItem.note}&quot;</Text>
                     ) : (
                       <Text style={styles.noNotePlaceholder}>Tidak ada permintaan khusus</Text>
                     )}
@@ -542,6 +673,37 @@ export default function HomeScreen() {
               ))}
 
               <View style={styles.divider} />
+
+              {/* Voucher Code Box */}
+              <View style={styles.voucherBox}>
+                <Text style={styles.formLabel}>Kode Voucher Promo 🎟️</Text>
+                <View style={styles.voucherInputRow}>
+                  <TextInput
+                    style={styles.voucherInput}
+                    placeholder="Masukkan kode promo (misal: SMARTHEMAT)"
+                    placeholderTextColor="#94a3b8"
+                    value={voucherCode}
+                    onChangeText={setVoucherCode}
+                    autoCapitalize="characters"
+                  />
+                  <TouchableOpacity
+                    onPress={handleApplyVoucher}
+                    style={[styles.voucherApplyBtn, { backgroundColor: activeTheme.primary }]}>
+                    <Text style={styles.voucherApplyBtnText}>Gunakan</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {appliedVoucher && (
+                  <View style={styles.appliedVoucherBadge}>
+                    <Text style={styles.appliedVoucherText}>
+                      ✓ Voucher {appliedVoucher.code} Aktif (-Rp {appliedVoucher.discount.toLocaleString('id-ID')})
+                    </Text>
+                    <TouchableOpacity onPress={() => setAppliedVoucher(null)}>
+                      <Text style={styles.removeVoucherText}>✕ Hapus</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
 
               <Text style={styles.formLabel}>Pilih Jam Pengambilan di Stan ⏱️</Text>
               {[
@@ -554,9 +716,12 @@ export default function HomeScreen() {
                   onPress={() => setPickupSlot(slot)}
                   style={[
                     styles.optionPill,
-                    pickupSlot === slot && styles.optionPillActive,
+                    pickupSlot === slot && {
+                      backgroundColor: activeTheme.primarySoft,
+                      borderColor: activeTheme.primary,
+                    },
                   ]}>
-                  <Text style={pickupSlot === slot ? styles.optionTextActive : styles.optionText}>
+                  <Text style={pickupSlot === slot ? [styles.optionTextActive, { color: activeTheme.primaryDark }] : styles.optionText}>
                     {pickupSlot === slot ? '🔘 ' : '⚪ '} {slot}
                   </Text>
                 </TouchableOpacity>
@@ -571,9 +736,15 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={m.name}
                   onPress={() => setPaymentMethod(m.name)}
-                  style={[styles.optionPill, paymentMethod === m.name && styles.optionPillActive]}>
+                  style={[
+                    styles.optionPill,
+                    paymentMethod === m.name && {
+                      backgroundColor: activeTheme.primarySoft,
+                      borderColor: activeTheme.primary,
+                    },
+                  ]}>
                   <View style={{ flex: 1 }}>
-                    <Text style={paymentMethod === m.name ? styles.optionTextActive : styles.optionText}>
+                    <Text style={paymentMethod === m.name ? [styles.optionTextActive, { color: activeTheme.primaryDark }] : styles.optionText}>
                       {paymentMethod === m.name ? '🔘 ' : '⚪ '} {m.name}
                     </Text>
                     <Text style={styles.optionSubtext}>{m.desc}</Text>
@@ -596,11 +767,18 @@ export default function HomeScreen() {
                 </View>
               )}
 
+              {/* Order Summary Breakdown */}
               <View style={styles.summaryBox}>
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Subtotal Pesanan</Text>
-                  <Text style={styles.summaryValue}>Rp {cartTotalPrice.toLocaleString('id-ID')}</Text>
+                  <Text style={styles.summaryValue}>Rp {rawCartTotalPrice.toLocaleString('id-ID')}</Text>
                 </View>
+                {appliedVoucher && (
+                  <View style={styles.summaryRow}>
+                    <Text style={[styles.summaryLabel, { color: '#059669', fontWeight: 'bold' }]}>Diskon Voucher Promo</Text>
+                    <Text style={[styles.summaryValue, { color: '#059669' }]}>- Rp {discountAmount.toLocaleString('id-ID')}</Text>
+                  </View>
+                )}
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Biaya Layanan Antrean</Text>
                   <Text style={[styles.summaryValue, { color: '#059669' }]}>Gratis (Rp 0)</Text>
@@ -609,7 +787,7 @@ export default function HomeScreen() {
                   <Text style={[styles.summaryLabel, { fontWeight: 'bold', color: '#0f172a' }]}>
                     Total Pembayaran
                   </Text>
-                  <Text style={[styles.summaryValue, { color: '#059669', fontSize: 18, fontWeight: '900' }]}>
+                  <Text style={[styles.summaryValue, { color: activeTheme.primary, fontSize: 18, fontWeight: '900' }]}>
                     Rp {cartTotalPrice.toLocaleString('id-ID')}
                   </Text>
                 </View>
@@ -622,7 +800,11 @@ export default function HomeScreen() {
               <TouchableOpacity
                 disabled={isBalanceInsufficient}
                 onPress={handleCheckout}
-                style={[styles.confirmBtn, isBalanceInsufficient && styles.confirmBtnDisabled]}>
+                style={[
+                  styles.confirmBtn,
+                  { backgroundColor: activeTheme.primary },
+                  isBalanceInsufficient && styles.confirmBtnDisabled,
+                ]}>
                 <Text style={styles.confirmBtnText}>
                   {isBalanceInsufficient ? 'Saldo Tidak Cukup' : 'Konfirmasi & Pesan Sekarang 🔥'}
                 </Text>
@@ -631,6 +813,19 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Item Quick View Modal */}
+      <MenuItemDetailModal
+        item={detailModalItem}
+        visible={!!detailModalItem}
+        onClose={() => setDetailModalItem(null)}
+      />
+
+      {/* Theme Picker Modal */}
+      <ThemeModal
+        visible={isThemeModalOpen}
+        onClose={() => setIsThemeModalOpen(false)}
+      />
 
       {/* Login Modal */}
       <LoginModal
@@ -662,227 +857,258 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
   },
-  accountCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-    gap: 10,
-  },
-  accountTopRow: {
+  topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  avatarTouchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  greetingGroup: {
     flex: 1,
   },
-  userAvatarBox: {
+  greetingText: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  greetingName: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#0f172a',
+    marginTop: 1,
+  },
+  roleTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 3,
+  },
+  roleDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  roleTagText: {
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  topHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  themeSwitcherBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  themeSwitcherText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  profileAvatarBox: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#ecfdf5',
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#10b981',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  userAvatarIcon: {
+  profileAvatarIcon: {
     fontSize: 22,
   },
-  accountName: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#0f172a',
+  virtualCard: {
+    backgroundColor: '#0f172a',
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+    gap: 12,
   },
-  accountDetail: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 2,
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  accountActionsCol: {
+  cardChipBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  profileSettingBtn: {
-    backgroundColor: '#eff6ff',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#bfdbfe',
+  cardChipIcon: {
+    fontSize: 16,
   },
-  profileSettingBtnText: {
-    color: '#1d4ed8',
-    fontSize: 11,
+  cardChipText: {
+    color: '#f8fafc',
+    fontSize: 12,
     fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  loginTriggerBtn: {
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+  nfcIcon: {
+    fontSize: 14,
   },
-  loginTriggerBtnText: {
-    color: '#334155',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  jwtBar: {
+  jwtMiniBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0f172a',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 5,
   },
-  jwtStatusDot: {
-    color: '#10b981',
-    fontSize: 10,
+  jwtMiniDot: {
+    color: '#34d399',
+    fontSize: 8,
   },
-  jwtLabel: {
+  jwtMiniText: {
     color: '#94a3b8',
     fontSize: 10,
     fontWeight: '700',
-    textTransform: 'uppercase',
   },
-  jwtValue: {
-    color: '#38bdf8',
-    fontSize: 11,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    marginTop: 1,
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
   },
-  jwtInspectBtn: {
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: '#334155',
+  balanceLabel: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  balanceValue: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#ffffff',
+    marginTop: 2,
+  },
+  eyeBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 10,
   },
-  jwtInspectBtnText: {
-    color: '#f8fafc',
+  eyeBtnText: {
+    color: '#cbd5e1',
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
   },
-  walletStrip: {
+  cardFooterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
-  walletTitle: {
-    fontSize: 11,
+  cardHolderLabel: {
+    fontSize: 9,
+    color: '#64748b',
     fontWeight: '700',
-    color: '#047857',
   },
-  walletAmount: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#065f46',
-    marginTop: 2,
-  },
-  topUpButton: {
-    backgroundColor: '#059669',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  topUpButtonText: {
-    color: '#ffffff',
+  cardHolderName: {
     fontSize: 12,
     fontWeight: '800',
+    color: '#f8fafc',
+    marginTop: 1,
   },
-  heroBanner: {
-    backgroundColor: '#047857',
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: '#047857',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  heroTextContainer: {
-    gap: 8,
-  },
-  heroBadgeRow: {
+  cardActionGroup: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
-  heroBadgePill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  tapNfcBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
   },
-  heroBadge: {
+  tapNfcBtnText: {
     color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  topUpBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  topUpBtnText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  promoBannerCard: {
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  promoContent: {
+    gap: 6,
+  },
+  promoTagRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  promoTagPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  promoTagText: {
+    color: '#0f172a',
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
-  heroLivePill: {
-    backgroundColor: '#10b981',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  heroLiveBadge: {
-    color: '#ffffff',
+  promoTapHint: {
+    color: '#94a3b8',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
-  heroTitle: {
+  promoTitle: {
     color: '#ffffff',
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '900',
-    lineHeight: 26,
+    marginTop: 2,
   },
-  heroSubtitle: {
-    color: '#ecfdf5',
+  promoDesc: {
+    color: '#cbd5e1',
     fontSize: 12,
     lineHeight: 17,
   },
-  heroPerksRow: {
+  promoDotsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 4,
+    gap: 5,
+    marginTop: 6,
   },
-  heroPerkPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+  promoDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
-  heroPerkText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '700',
+  promoDotActive: {
+    width: 18,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -901,7 +1127,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: '#0f172a',
   },
   searchClearBtn: {
@@ -915,22 +1141,15 @@ const styles = StyleSheet.create({
   quickFilterChip: {
     backgroundColor: '#ffffff',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
+    paddingVertical: 7,
+    borderRadius: 14,
+    borderWidth: 1.5,
     borderColor: '#e2e8f0',
-  },
-  quickFilterChipActive: {
-    backgroundColor: '#0f172a',
-    borderColor: '#0f172a',
   },
   quickFilterChipText: {
     fontSize: 11,
     fontWeight: '700',
     color: '#475569',
-  },
-  quickFilterChipTextActive: {
-    color: '#ffffff',
   },
   categoryScroll: {
     marginBottom: 16,
@@ -943,7 +1162,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1.5,
     gap: 6,
   },
@@ -975,13 +1194,13 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
@@ -1046,19 +1265,18 @@ const styles = StyleSheet.create({
   },
   cardStan: {
     fontSize: 12,
-    color: '#059669',
     fontWeight: '800',
   },
   prepTimeBadge: {
     backgroundColor: '#f1f5f9',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   prepTimeText: {
     fontSize: 10,
     color: '#475569',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   cardTitle: {
     fontSize: 16,
@@ -1106,7 +1324,6 @@ const styles = StyleSheet.create({
   cardPrice: {
     fontSize: 17,
     fontWeight: '900',
-    color: '#047857',
   },
   cardActionsRow: {
     flexDirection: 'row',
@@ -1114,26 +1331,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   testApiBtn: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#f1f5f9',
     borderWidth: 1.5,
-    borderColor: '#86efac',
+    borderColor: '#cbd5e1',
     paddingHorizontal: 8,
     paddingVertical: 7,
     borderRadius: 10,
   },
   testApiBtnText: {
-    color: '#15803d',
+    color: '#334155',
     fontWeight: '800',
     fontSize: 11,
   },
   addBtn: {
-    backgroundColor: '#059669',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 10,
-    shadowColor: '#059669',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 2,
   },
@@ -1150,9 +1366,8 @@ const styles = StyleSheet.create({
   stepperInCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ecfdf5',
+    backgroundColor: '#ffffff',
     borderWidth: 1.5,
-    borderColor: '#10b981',
     borderRadius: 10,
     paddingHorizontal: 4,
     paddingVertical: 2,
@@ -1162,27 +1377,25 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 6,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
     justifyContent: 'center',
     alignItems: 'center',
   },
   stepperBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '900',
-    color: '#047857',
   },
   stepperQtyText: {
     fontSize: 13,
     fontWeight: '900',
-    color: '#065f46',
+    color: '#0f172a',
   },
   floatingCartBar: {
     position: 'absolute',
     bottom: 20,
     left: 16,
     right: 16,
-    backgroundColor: '#0f172a',
-    borderRadius: 18,
+    borderRadius: 20,
     paddingHorizontal: 18,
     paddingVertical: 14,
     flexDirection: 'row',
@@ -1205,7 +1418,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   checkoutBarBtn: {
-    backgroundColor: '#10b981',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
@@ -1281,8 +1493,7 @@ const styles = StyleSheet.create({
   },
   cartItemPrice: {
     fontSize: 12,
-    color: '#059669',
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 2,
   },
   qtyControl: {
@@ -1352,7 +1563,6 @@ const styles = StyleSheet.create({
   editNoteBtnText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#059669',
   },
   noteInputBox: {
     marginTop: 8,
@@ -1385,7 +1595,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   saveNoteBtn: {
-    backgroundColor: '#059669',
     alignSelf: 'flex-end',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -1412,6 +1621,58 @@ const styles = StyleSheet.create({
     backgroundColor: '#e2e8f0',
     marginVertical: 14,
   },
+  voucherBox: {
+    marginBottom: 14,
+  },
+  voucherInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  voucherInput: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  voucherApplyBtn: {
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    borderRadius: 12,
+  },
+  voucherApplyBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  appliedVoucherBadge: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#ecfdf5',
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 8,
+  },
+  appliedVoucherText: {
+    color: '#047857',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  removeVoucherText: {
+    color: '#ef4444',
+    fontSize: 11,
+    fontWeight: '700',
+  },
   formLabel: {
     fontSize: 13,
     fontWeight: '800',
@@ -1426,17 +1687,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     marginBottom: 8,
   },
-  optionPillActive: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#059669',
-  },
   optionText: {
     color: '#334155',
     fontSize: 13,
     fontWeight: '600',
   },
   optionTextActive: {
-    color: '#047857',
     fontSize: 13,
     fontWeight: '800',
   },
@@ -1504,11 +1760,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   confirmBtn: {
-    backgroundColor: '#059669',
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: 'center',
-    shadowColor: '#059669',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,

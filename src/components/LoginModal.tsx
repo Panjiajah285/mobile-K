@@ -15,7 +15,7 @@ interface LoginModalProps {
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose }) => {
-  const { login } = useCanteen();
+  const { login, activeTheme } = useCanteen();
   const [selectedRole, setSelectedRole] = useState<'siswa' | 'pengelola'>('siswa');
   
   // Form State for Siswa (Nama & NIM)
@@ -58,16 +58,30 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose }) => {
           <View style={styles.roleTabContainer}>
             <TouchableOpacity
               onPress={() => setSelectedRole('siswa')}
-              style={[styles.roleTab, selectedRole === 'siswa' && styles.roleTabActive]}>
-              <Text style={[styles.roleTabText, selectedRole === 'siswa' && styles.roleTabTextActive]}>
+              style={[
+                styles.roleTab,
+                selectedRole === 'siswa' && [styles.roleTabActive, { borderBottomColor: activeTheme.primary }],
+              ]}>
+              <Text
+                style={[
+                  styles.roleTabText,
+                  selectedRole === 'siswa' && [styles.roleTabTextActive, { color: activeTheme.primaryDark }],
+                ]}>
                 🎓 Login Siswa
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => setSelectedRole('pengelola')}
-              style={[styles.roleTab, selectedRole === 'pengelola' && styles.roleTabActive]}>
-              <Text style={[styles.roleTabText, selectedRole === 'pengelola' && styles.roleTabTextActive]}>
+              style={[
+                styles.roleTab,
+                selectedRole === 'pengelola' && [styles.roleTabActive, { borderBottomColor: activeTheme.primary }],
+              ]}>
+              <Text
+                style={[
+                  styles.roleTabText,
+                  selectedRole === 'pengelola' && [styles.roleTabTextActive, { color: activeTheme.primaryDark }],
+                ]}>
                 👨‍🍳 Login Pengelola
               </Text>
             </TouchableOpacity>
@@ -127,7 +141,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ visible, onClose }) => {
             </View>
           )}
 
-          <TouchableOpacity onPress={() => handleLogin()} style={styles.submitBtn}>
+          <TouchableOpacity
+            onPress={() => handleLogin()}
+            style={[styles.submitBtn, { backgroundColor: activeTheme.primary }]}>
             <Text style={styles.submitBtnText}>
               Masuk Sebagai {selectedRole === 'siswa' ? 'Siswa' : 'Pengelola'} ➔
             </Text>

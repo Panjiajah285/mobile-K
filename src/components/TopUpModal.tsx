@@ -31,7 +31,7 @@ const PAYMENT_METHODS = [
 ];
 
 export const TopUpModal: React.FC<TopUpModalProps> = ({ visible, onClose }) => {
-  const { balance, topUpBalance, user } = useCanteen();
+  const { balance, topUpBalance, user, activeTheme } = useCanteen();
   const [selectedAmount, setSelectedAmount] = useState<number>(50000);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [selectedMethod, setSelectedMethod] = useState<string>('qris');
@@ -129,13 +129,20 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ visible, onClose }) => {
                     <TouchableOpacity
                       key={item.amount}
                       onPress={() => handleSelectPreset(item.amount)}
-                      style={[styles.presetBtn, isSelected && styles.presetBtnActive]}>
+                      style={[
+                        styles.presetBtn,
+                        isSelected && { borderColor: activeTheme.primary, backgroundColor: activeTheme.primarySoft },
+                      ]}>
                       {item.badge && (
-                        <View style={styles.presetBadge}>
+                        <View style={[styles.presetBadge, { backgroundColor: activeTheme.primary }]}>
                           <Text style={styles.presetBadgeText}>{item.badge}</Text>
                         </View>
                       )}
-                      <Text style={[styles.presetBtnText, isSelected && styles.presetBtnTextActive]}>
+                      <Text
+                        style={[
+                          styles.presetBtnText,
+                          isSelected && { color: activeTheme.primaryDark, fontWeight: '900' },
+                        ]}>
                         {item.label}
                       </Text>
                     </TouchableOpacity>
@@ -165,16 +172,19 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ visible, onClose }) => {
                     <TouchableOpacity
                       key={method.id}
                       onPress={() => setSelectedMethod(method.id)}
-                      style={[styles.methodCard, isSelected && styles.methodCardActive]}>
+                      style={[
+                        styles.methodCard,
+                        isSelected && { borderColor: activeTheme.primary, backgroundColor: activeTheme.primarySoft },
+                      ]}>
                       <Text style={styles.methodIcon}>{method.icon}</Text>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.methodName, isSelected && styles.methodNameActive]}>
+                        <Text style={[styles.methodName, isSelected && { color: activeTheme.primaryDark, fontWeight: '800' }]}>
                           {method.name}
                         </Text>
                         <Text style={styles.methodDesc}>{method.desc}</Text>
                       </View>
-                      <View style={[styles.radioCircle, isSelected && styles.radioCircleActive]}>
-                        {isSelected && <View style={styles.radioInner} />}
+                      <View style={[styles.radioCircle, isSelected && { borderColor: activeTheme.primary }]}>
+                        {isSelected && <View style={[styles.radioInner, { backgroundColor: activeTheme.primary }]} />}
                       </View>
                     </TouchableOpacity>
                   );
@@ -211,7 +221,7 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ visible, onClose }) => {
                 </View>
                 <View style={[styles.summaryRow, { borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 8, marginTop: 4 }]}>
                   <Text style={[styles.summaryLabel, { fontWeight: 'bold', color: '#0f172a' }]}>Total Transfer</Text>
-                  <Text style={[styles.summaryVal, { fontSize: 16, fontWeight: '800', color: '#059669' }]}>
+                  <Text style={[styles.summaryVal, { fontSize: 16, fontWeight: '800', color: activeTheme.primary }]}>
                     Rp {finalAmount.toLocaleString('id-ID')}
                   </Text>
                 </View>
@@ -223,6 +233,7 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ visible, onClose }) => {
                 onPress={handleConfirmTopUp}
                 style={[
                   styles.confirmBtn,
+                  { backgroundColor: activeTheme.primary },
                   (isProcessing || finalAmount < 5000) && styles.confirmBtnDisabled,
                 ]}>
                 <Text style={styles.confirmBtnText}>

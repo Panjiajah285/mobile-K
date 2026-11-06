@@ -1,5 +1,5 @@
 import { INITIAL_MENU, MenuItem } from '@/constants/canteenData';
-import { createJwtToken, DecodedJwt, decodeJwtToken, verifyJwtToken } from '@/utils/jwt';
+import { createJwtToken, verifyJwtToken } from '@/utils/jwt';
 
 export interface ApiLogItem {
   id: string;

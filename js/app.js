@@ -1164,6 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </td>
           <td>
             <div style="display: flex; gap: 0.4rem;">
+              <button class="btn btn-secondary btn-sm btn-camera-menu" data-id="${item.id}" title="Update Foto Menu dengan Kamera">📸</button>
               <button class="btn btn-secondary btn-sm btn-edit-menu" data-id="${item.id}" title="Edit Data Menu">✏️ Edit</button>
               <button class="btn btn-secondary btn-sm btn-delete-menu" data-id="${item.id}" title="Hapus Menu" style="color: var(--danger);">🗑️</button>
             </div>
@@ -1196,6 +1197,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const camBtn = e.target.closest('.btn-camera-menu');
+    if (camBtn) {
+      const id = camBtn.getAttribute('data-id');
+      openEditMenuModal(id);
+      setTimeout(() => {
+        if (formMenuCameraInput) formMenuCameraInput.click();
+      }, 250);
+      return;
+    }
+
     const editBtn = e.target.closest('.btn-edit-menu');
     if (editBtn) {
       const id = editBtn.getAttribute('data-id');
@@ -1215,6 +1226,94 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Modal Add / Edit Menu Camera Controls
+  const formMenuPreviewImg = document.getElementById('form-menu-preview-img');
+  const btnTriggerCamera = document.getElementById('btn-trigger-camera');
+  const btnOpenWebcamLive = document.getElementById('btn-open-webcam-live');
+  const formMenuCameraInput = document.getElementById('form-menu-camera-input');
+  const liveWebcamContainer = document.getElementById('live-webcam-container');
+  const liveWebcamVideo = document.getElementById('live-webcam-video');
+  const btnSnapWebcam = document.getElementById('btn-snap-webcam');
+  const btnCloseWebcam = document.getElementById('btn-close-webcam');
+  let customMenuImageBase64 = null;
+  let webcamStream = null;
+
+  function stopWebcam() {
+    if (webcamStream) {
+      webcamStream.getTracks().forEach(t => t.stop());
+      webcamStream = null;
+    }
+    if (liveWebcamContainer) liveWebcamContainer.style.display = 'none';
+  }
+
+  if (btnTriggerCamera && formMenuCameraInput) {
+    btnTriggerCamera.addEventListener('click', () => {
+      formMenuCameraInput.click();
+    });
+
+    formMenuCameraInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          customMenuImageBase64 = event.target.result;
+          if (formMenuPreviewImg) formMenuPreviewImg.src = customMenuImageBase64;
+          showToast('Foto menu berhasil diambil dari kamera! 📸', 'success');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  if (btnOpenWebcamLive && liveWebcamContainer && liveWebcamVideo) {
+    btnOpenWebcamLive.addEventListener('click', async () => {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          webcamStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
+          liveWebcamVideo.srcObject = webcamStream;
+          liveWebcamContainer.style.display = 'block';
+        } else {
+          showToast('Browser tidak mendukung akses kamera langsung.', 'danger');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Izin kamera belum diberikan atau webcam tidak ditemukan.', 'danger');
+      }
+    });
+
+    if (btnSnapWebcam) {
+      btnSnapWebcam.addEventListener('click', () => {
+        if (!liveWebcamVideo) return;
+        const canvas = document.createElement('canvas');
+        canvas.width = liveWebcamVideo.videoWidth || 640;
+        canvas.height = liveWebcamVideo.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(liveWebcamVideo, 0, 0, canvas.width, canvas.height);
+          customMenuImageBase64 = canvas.toDataURL('image/jpeg', 0.85);
+          if (formMenuPreviewImg) formMenuPreviewImg.src = customMenuImageBase64;
+          stopWebcam();
+          showToast('Foto menu berhasil dijepret dari kamera! 📸', 'success');
+        }
+      });
+    }
+
+    if (btnCloseWebcam) {
+      btnCloseWebcam.addEventListener('click', () => {
+        stopWebcam();
+      });
+    }
+  }
+
+  if (formMenuImage) {
+    formMenuImage.addEventListener('change', () => {
+      customMenuImageBase64 = null;
+      if (formMenuPreviewImg) formMenuPreviewImg.src = formMenuImage.value;
+    });
+  }
+
   // Modal Add / Edit Menu
   function openAddMenuModal() {
     menuModalTitle.textContent = 'Tambah Menu Makanan Baru ➕';
@@ -1225,6 +1324,9 @@ document.addEventListener('DOMContentLoaded', () => {
     formMenuStock.value = 20;
     formMenuPreptime.value = '5-7 menit';
     formMenuDesc.value = '';
+    customMenuImageBase64 = null;
+    stopWebcam();
+    if (formMenuPreviewImg) formMenuPreviewImg.src = formMenuImage.value || 'assets/images/ayam-geprek.jpg';
     menuModalBackdrop.classList.add('open');
   }
 
@@ -1240,10 +1342,14 @@ document.addEventListener('DOMContentLoaded', () => {
     formMenuPreptime.value = item.prepTime;
     formMenuDesc.value = item.description;
     formMenuImage.value = item.image;
+    customMenuImageBase64 = null;
+    stopWebcam();
+    if (formMenuPreviewImg) formMenuPreviewImg.src = item.image || 'assets/images/ayam-geprek.jpg';
     menuModalBackdrop.classList.add('open');
   }
 
   function closeMenuModal() {
+    stopWebcam();
     menuModalBackdrop.classList.remove('open');
   }
 
@@ -1263,14 +1369,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const stock = parseInt(formMenuStock.value, 10) || 0;
     const prepTime = formMenuPreptime.value.trim() || '5 menit';
     const description = formMenuDesc.value.trim() || 'Menu nikmat kantin sekolah.';
-    const image = formMenuImage.value;
+    const image = customMenuImageBase64 || formMenuImage.value;
 
     if (!name) return;
 
     if (id) {
       // Edit
       store.editMenuItem(id, { name, category, price, stock, prepTime, description, image });
-      showToast(`Menu "${name}" berhasil diperbarui!`, 'success');
+      showToast(`Menu "${name}" berhasil diperbarui beserta foto kamera! 📸`, 'success');
     } else {
       // Add
       store.addMenuItem({ name, category, price, stock, prepTime, description, image });

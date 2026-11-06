@@ -2,10 +2,13 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Collapsible } from '@/components/ui/collapsible';
 import { MaxContentWidth } from '@/constants/theme';
+import { useCanteen } from '@/context/CanteenContext';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HelpScreen() {
+  const { activeTheme } = useCanteen();
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -13,8 +16,8 @@ export default function HelpScreen() {
           
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.badgeRow}>
-              <Text style={styles.badgeText}>PUSAT BANTUAN & INFORMASI</Text>
+            <View style={[styles.badgeRow, { backgroundColor: activeTheme.primarySoft }]}>
+              <Text style={[styles.badgeText, { color: activeTheme.primaryDark }]}>PUSAT BANTUAN & INFORMASI</Text>
             </View>
             <Text style={styles.title}>Panduan SmartCanteen ℹ️</Text>
             <Text style={styles.subtitle}>
@@ -49,7 +52,7 @@ export default function HelpScreen() {
                   1. Masuk ke tab <ThemedText type="smallBold">🍱 Menu</ThemedText>.{'\n'}
                   2. Pilih makanan atau minuman favorit Anda.{'\n'}
                   3. Klik <ThemedText type="smallBold">+ Pesan</ThemedText> dan buka keranjang belanja.{'\n'}
-                  4. Tambahkan catatan bila ada permintaan khusus (misal: "tidak pedas").{'\n'}
+                  4. Tambahkan catatan bila ada permintaan khusus (misal: &quot;tidak pedas&quot;).{'\n'}
                   5. Pilih jam istirahat pengambilan dan konfirmasi pesanan.{'\n'}
                   6. Pantau status pembuatan di tab <ThemedText type="smallBold">📋 Status Antrean</ThemedText>.
                 </ThemedText>
@@ -60,7 +63,7 @@ export default function HelpScreen() {
               <ThemedView type="backgroundElement" style={styles.collapsibleBox}>
                 <ThemedText type="small">
                   Anda dapat mengisi saldo SmartPay melalui:{'\n'}
-                  • <ThemedText type="smallBold">QRIS Sekolah Digital:</ThemedText> Buka aplikasi e-wallet / mobile banking lalu scan kode QR di modal "Isi Saldo". Saldo otomatis bertambah instan tanpa biaya admin.{'\n'}
+                  • <ThemedText type="smallBold">QRIS Sekolah Digital:</ThemedText> Buka aplikasi e-wallet / mobile banking lalu scan kode QR di modal &quot;Isi Saldo&quot;. Saldo otomatis bertambah instan tanpa biaya admin.{'\n'}
                   • <ThemedText type="smallBold">Kasir Kantin & Koperasi:</ThemedText> Kunjungi kasir sekolah dan sebutkan NISN/NIM Anda untuk setor tunai.
                 </ThemedText>
               </ThemedView>
@@ -71,7 +74,7 @@ export default function HelpScreen() {
                 <ThemedText type="small">
                   Setelah dapur menyelesaikan pesanan, status pesanan di tab Antrean akan berubah menjadi{' '}
                   <ThemedText type="smallBold" style={{ color: '#059669' }}>
-                    "🔔 SIAP DIAMBIL DI STAN"
+                    &quot;🔔 SIAP DIAMBIL DI STAN&quot;
                   </ThemedText>
                   . Tunjukkan Nomor Antrean (contoh: A-024) ke petugas stan untuk mengambil makanan Anda.
                 </ThemedText>
@@ -82,7 +85,7 @@ export default function HelpScreen() {
               <ThemedView type="backgroundElement" style={styles.collapsibleBox}>
                 <ThemedText type="small">
                   Ya! Pesanan dapat dibatalkan selama statusnya masih{' '}
-                  <ThemedText type="smallBold">"⏳ Menunggu"</ThemedText> (belum mulai dimasak oleh stan). 
+                  <ThemedText type="smallBold">&quot;⏳ Menunggu&quot;</ThemedText> (belum mulai dimasak oleh stan).
                   Jika Anda menggunakan metode pembayaran SmartPay, saldo akan otomatis dikembalikan 100% ke akun Anda.
                 </ThemedText>
               </ThemedView>
@@ -91,18 +94,18 @@ export default function HelpScreen() {
             <Collapsible title="Bagaimana stan kantin menerima pesanan?">
               <ThemedView type="backgroundElement" style={styles.collapsibleBox}>
                 <ThemedText type="small">
-                  Pemilik stan masuk melalui login <ThemedText type="smallBold">👨‍🍳 Mode Pengelola</ThemedText>. Di dashboard stan, pesanan masuk secara real-time disertai rincian pesanan dan catatan siswa. Petugas dapat menekan "Mulai Masak" lalu "Panggil Siswa" ketika makanan siap.
+                  Pemilik stan masuk melalui login <ThemedText type="smallBold">👨‍🍳 Mode Pengelola</ThemedText>. Di dashboard stan, pesanan masuk secara real-time disertai rincian pesanan dan catatan siswa.                   Petugas dapat menekan &quot;Mulai Masak&quot; lalu &quot;Panggil Siswa&quot; ketika makanan siap.
                 </ThemedText>
               </ThemedView>
             </Collapsible>
           </View>
 
           {/* Contact Box */}
-          <View style={styles.contactCard}>
+          <View style={[styles.contactCard, { backgroundColor: activeTheme.primarySoft, borderColor: activeTheme.primary }]}>
             <Text style={styles.contactIcon}>💬</Text>
             <View style={{ flex: 1 }}>
-              <Text style={styles.contactTitle}>Pusat Pengaduan & Layanan Kantin</Text>
-              <Text style={styles.contactDesc}>
+              <Text style={[styles.contactTitle, { color: activeTheme.primaryDark }]}>Pusat Pengaduan & Layanan Kantin</Text>
+              <Text style={[styles.contactDesc, { color: activeTheme.primaryDark }]}>
                 Ada kendala menu, saldo, atau higienitas makanan? Laporkan langsung ke Kantor Koperasi Sekolah atau Pengawas Kantin Sehat.
               </Text>
             </View>

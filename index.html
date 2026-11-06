@@ -1121,7 +1121,28 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="form-menu-image">Pilihan Gambar Menu</label>
+            <label class="form-label">Foto Menu Makanan / Minuman 📷</label>
+            <div id="menu-camera-preview-box" style="margin-bottom: 0.5rem; text-align: center;">
+              <img id="form-menu-preview-img" src="assets/images/ayam-geprek.jpg" alt="Preview Menu" style="width: 100%; max-height: 160px; object-fit: cover; border-radius: 12px; border: 1.5px solid var(--border-color); display: block;">
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-trigger-camera" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                📸 Ambil Foto Kamera
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-open-webcam-live" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                🎥 Live Webcam
+              </button>
+            </div>
+            <input type="file" id="form-menu-camera-input" accept="image/*" capture="environment" style="display: none;">
+            <!-- Live WebCam Viewfinder Container -->
+            <div id="live-webcam-container" style="display: none; background: #000; border-radius: 12px; padding: 8px; margin-bottom: 0.5rem; text-align: center;">
+              <video id="live-webcam-video" autoplay playsinline muted style="width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px;"></video>
+              <div style="margin-top: 6px; display: flex; gap: 6px; justify-content: center;">
+                <button type="button" class="btn btn-primary btn-sm" id="btn-snap-webcam">📸 Jepret Foto Menu</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-close-webcam">Batal</button>
+              </div>
+            </div>
+            <label class="form-label" for="form-menu-image" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Atau Pilih Preset Gambar</label>
             <select id="form-menu-image" class="form-input">
               <option value="assets/images/ayam-geprek.jpg">Ayam Geprek Sambal Bawang</option>
               <option value="assets/images/mie-bakso.jpg">Mie Ayam Bakso Hangat</option>

@@ -1,9 +1,8 @@
 import { useCanteen } from '@/context/CanteenContext';
 import { apiGetMenuById, apiLogout, subscribeApiLogs, ApiLogItem } from '@/services/api';
-import { decodeJwtToken, DecodedJwt } from '@/utils/jwt';
+import { decodeJwtToken } from '@/utils/jwt';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Modal,
   Platform,
   ScrollView,
@@ -22,9 +21,9 @@ export const JwtTokenInspectorModal: React.FC<JwtTokenInspectorModalProps> = ({
   visible,
   onClose,
 }) => {
-  const { token, refreshToken, user, logout } = useCanteen();
+  const { token, logout } = useCanteen();
   const [logs, setLogs] = useState<ApiLogItem[]>([]);
-  const [decoded, setDecoded] = useState<DecodedJwt | null>(null);
+  const decoded = token ? decodeJwtToken(token) : null;
   const [testResult, setTestResult] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState<boolean>(false);
 
@@ -34,14 +33,6 @@ export const JwtTokenInspectorModal: React.FC<JwtTokenInspectorModalProps> = ({
     });
     return unsub;
   }, []);
-
-  useEffect(() => {
-    if (token) {
-      setDecoded(decodeJwtToken(token));
-    } else {
-      setDecoded(null);
-    }
-  }, [token]);
 
   const handleTestMenuEndpoint = async (withValidToken: boolean = true) => {
     setIsTesting(true);

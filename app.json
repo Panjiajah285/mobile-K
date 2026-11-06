@@ -32,6 +32,12 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Izinkan SmartCanteen mengakses kamera untuk mengambil foto menu kantin."
+        }
       ]
     ],
     "experiments": {

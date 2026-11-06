@@ -1,5 +1,6 @@
 import { JwtTokenInspectorModal } from '@/components/JwtTokenInspectorModal';
 import { LoginModal } from '@/components/LoginModal';
+import { THEME_PRESETS } from '@/constants/theme';
 import { useCanteen } from '@/context/CanteenContext';
 import React, { useEffect, useState } from 'react';
 import {
@@ -15,10 +16,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function PengaturanScreen() {
-  const { user, role, token, updateProfile, updatePassword, logout } = useCanteen();
+const AVATAR_OPTIONS = [
+  { id: '🎓', label: 'Siswa Pintar' },
+  { id: '🧑‍💻', label: 'Tech Cerdas' },
+  { id: '🌸', label: 'Ceria Aktif' },
+  { id: '⚡', label: 'Bintang Prestasi' },
+  { id: '🦁', label: 'Juara Kampus' },
+  { id: '👨‍🍳', label: 'Koki Handal' },
+];
 
-  const [activeTab, setActiveTab] = useState<'profil' | 'sandi' | 'preferensi'>('profil');
+export default function PengaturanScreen() {
+  const { user, token, updateProfile, updatePassword, logout, activeTheme, themePreset, setThemePreset } = useCanteen();
+
+  const [activeTab, setActiveTab] = useState<'profil' | 'tema' | 'sandi' | 'preferensi'>('profil');
   const [isJwtModalOpen, setIsJwtModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
@@ -28,6 +38,7 @@ export default function PengaturanScreen() {
   const [kelasJurusan, setKelasJurusan] = useState('');
   const [phoneSiswa, setPhoneSiswa] = useState('');
   const [emailSiswa, setEmailSiswa] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState('🎓');
 
   // Form State Pengelola
   const [namaPengelola, setNamaPengelola] = useState('');
@@ -50,6 +61,9 @@ export default function PengaturanScreen() {
 
   useEffect(() => {
     if (user) {
+      // Reinitialize editable form fields when the logged-in profile changes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedAvatar(user.avatar || (user.role === 'siswa' ? '🎓' : '👨‍🍳'));
       if (user.role === 'siswa') {
         setNamaSiswa(user.name || '');
         setNimSiswa(user.nim || user.username || '');
@@ -73,10 +87,16 @@ export default function PengaturanScreen() {
     setTimeout(() => setFeedbackMsg(null), 3000);
   };
 
+  const handleSelectAvatar = async (avatarChar: string) => {
+    setSelectedAvatar(avatarChar);
+    await updateProfile({ avatar: avatarChar });
+    showToast(`✓ Avatar profil diubah menjadi ${avatarChar}`);
+  };
+
   const handleSaveProfile = async () => {
     if (user?.role === 'siswa') {
       if (!namaSiswa.trim() || !nimSiswa.trim()) {
-        const err = 'Nama lengkap dan NIM mahasiswa tidak boleh kosong!';
+        const err = 'Nama lengkap dan NIM siswa tidak boleh kosong!';
         if (Platform.OS === 'web') alert(err);
         else Alert.alert('Validasi Gagal', err);
         return;
@@ -89,16 +109,17 @@ export default function PengaturanScreen() {
         majorOrClass: kelasJurusan.trim(),
         phone: phoneSiswa.trim(),
         email: emailSiswa.trim(),
+        avatar: selectedAvatar,
         dietaryPreference: dietaryPref,
         allergies: allergiesText,
         soundAlerts,
       });
 
       if (ok) {
-        showToast('✓ Profil mahasiswa berhasil diperbarui!');
+        showToast('✓ Profil mahasiswa & preferensi berhasil diperbarui!');
         const msg = 'Profil mahasiswa & payload JWT token berhasil diperbarui!';
         if (Platform.OS === 'web') alert(msg);
-        else Alert.alert('Profil Tersimpan', msg);
+        else Alert.alert('Profil Tersimpan 🎉', msg);
       }
     } else {
       if (!namaPengelola.trim() || !stanName.trim()) {
@@ -113,13 +134,14 @@ export default function PengaturanScreen() {
         stanName: stanName.trim(),
         operatingHours: operatingHours.trim(),
         phone: phoneStan.trim(),
+        avatar: selectedAvatar,
       });
 
       if (ok) {
-        showToast('✓ Profil pengelola kantin berhasil diperbarui!');
+        showToast('✓ Profil stan kantin berhasil diperbarui!');
         const msg = 'Profil stan kantin & token JWT berhasil diperbarui!';
         if (Platform.OS === 'web') alert(msg);
-        else Alert.alert('Profil Tersimpan', msg);
+        else Alert.alert('Profil Tersimpan 🎉', msg);
       }
     }
   };
@@ -160,6 +182,8 @@ export default function PengaturanScreen() {
     else Alert.alert('Logout & Refresh Token 🔄', msg);
   };
 
+  const themeList = Object.values(THEME_PRESETS);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -167,10 +191,8 @@ export default function PengaturanScreen() {
         {/* Profile Card Header */}
         <View style={styles.profileHeaderCard}>
           <View style={styles.avatarRow}>
-            <View style={styles.avatarBig}>
-              <Text style={styles.avatarIcon}>
-                {user ? (user.role === 'siswa' ? '🎓' : '👨‍🍳') : '👤'}
-              </Text>
+            <View style={[styles.avatarBig, { borderColor: activeTheme.primary, backgroundColor: activeTheme.primarySoft }]}>
+              <Text style={styles.avatarIcon}>{selectedAvatar}</Text>
             </View>
 
             <View style={{ flex: 1 }}>
@@ -180,8 +202,8 @@ export default function PengaturanScreen() {
               <Text style={styles.profileDetail}>{user ? user.detail : 'Silakan masuk ke akun Anda'}</Text>
 
               <View style={styles.badgeRow}>
-                <View style={styles.roleBadge}>
-                  <Text style={styles.roleBadgeText}>
+                <View style={[styles.roleBadge, { backgroundColor: activeTheme.primarySoft }]}>
+                  <Text style={[styles.roleBadgeText, { color: activeTheme.primaryDark }]}>
                     {user ? (user.role === 'siswa' ? '🎓 MAHASISWA / SISWA' : '👨‍🍳 PENGELOLA KANTIN') : 'TAMU'}
                   </Text>
                 </View>
@@ -221,23 +243,31 @@ export default function PengaturanScreen() {
           <TouchableOpacity
             onPress={() => setActiveTab('profil')}
             style={[styles.tabBtn, activeTab === 'profil' && styles.tabBtnActive]}>
-            <Text style={[styles.tabBtnText, activeTab === 'profil' && styles.tabBtnTextActive]}>
-              👤 Profil Saya
+            <Text style={[styles.tabBtnText, activeTab === 'profil' && [styles.tabBtnTextActive, { color: activeTheme.primaryDark }]]}>
+              👤 Profil
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setActiveTab('tema')}
+            style={[styles.tabBtn, activeTab === 'tema' && styles.tabBtnActive]}>
+            <Text style={[styles.tabBtnText, activeTab === 'tema' && [styles.tabBtnTextActive, { color: activeTheme.primaryDark }]]}>
+              🎨 Tema Warna
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setActiveTab('sandi')}
             style={[styles.tabBtn, activeTab === 'sandi' && styles.tabBtnActive]}>
-            <Text style={[styles.tabBtnText, activeTab === 'sandi' && styles.tabBtnTextActive]}>
-              🔐 Kata Sandi
+            <Text style={[styles.tabBtnText, activeTab === 'sandi' && [styles.tabBtnTextActive, { color: activeTheme.primaryDark }]]}>
+              🔐 Sandi
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setActiveTab('preferensi')}
             style={[styles.tabBtn, activeTab === 'preferensi' && styles.tabBtnActive]}>
-            <Text style={[styles.tabBtnText, activeTab === 'preferensi' && styles.tabBtnTextActive]}>
+            <Text style={[styles.tabBtnText, activeTab === 'preferensi' && [styles.tabBtnTextActive, { color: activeTheme.primaryDark }]]}>
               ⚙️ Preferensi
             </Text>
           </TouchableOpacity>
@@ -248,94 +278,118 @@ export default function PengaturanScreen() {
           <View style={styles.sectionCard}>
             <View style={styles.sectionTitleRow}>
               <Text style={styles.sectionTitle}>
-                {user?.role === 'siswa' ? '✏️ Ubah Profil Mahasiswa / Siswa' : '✏️ Ubah Profil Stan & Pengelola'}
+                {user?.role === 'siswa' ? '📝 Data Pribadi Siswa / Mahasiswa' : '👨‍🍳 Data Stan Kantin'}
               </Text>
-              <Text style={styles.sectionSubtitle}>Data ini otomatis sinkron dengan pesanan dan token JWT Anda</Text>
+              <Text style={styles.sectionSubtitle}>
+                Data ini tersimpan aman di aplikasi dan disinkronkan ke dalam klaim JWT Token.
+              </Text>
+            </View>
+
+            {/* Avatar Selector Row */}
+            <View style={styles.avatarSection}>
+              <Text style={styles.formLabel}>Pilih Avatar Karakter:</Text>
+              <View style={styles.avatarGrid}>
+                {AVATAR_OPTIONS.map((av) => (
+                  <TouchableOpacity
+                    key={av.id}
+                    onPress={() => handleSelectAvatar(av.id)}
+                    style={[
+                      styles.avatarChip,
+                      selectedAvatar === av.id && [styles.avatarChipActive, { borderColor: activeTheme.primary, backgroundColor: activeTheme.primarySoft }],
+                    ]}>
+                    <Text style={styles.avatarChipIcon}>{av.id}</Text>
+                    <Text style={styles.avatarChipLabel}>{av.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             {user?.role === 'siswa' ? (
-              /* FORM MAHASISWA */
               <View style={styles.formWrapper}>
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Nama Lengkap Mahasiswa *</Text>
+                  <Text style={styles.formLabel}>Nama Lengkap Siswa *</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Contoh: Natania Oktaviani"
-                    placeholderTextColor="#94a3b8"
                     value={namaSiswa}
                     onChangeText={setNamaSiswa}
+                    placeholder="Masukkan nama lengkap..."
+                    placeholderTextColor="#94a3b8"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>NIM / NISN Mahasiswa *</Text>
+                  <Text style={styles.formLabel}>Nomor Induk Mahasiswa (NIM / NISN) *</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Contoh: 202610192"
-                    placeholderTextColor="#94a3b8"
-                    keyboardType="numeric"
                     value={nimSiswa}
                     onChangeText={setNimSiswa}
+                    placeholder="Contoh: 202610192"
+                    placeholderTextColor="#94a3b8"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Kelas / Program Studi Jurusan</Text>
+                  <Text style={styles.formLabel}>Kelas / Program Studi</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Contoh: Kelas XII MIPA 2 / S1 Informatika"
-                    placeholderTextColor="#94a3b8"
                     value={kelasJurusan}
                     onChangeText={setKelasJurusan}
+                    placeholder="Contoh: Kelas XII MIPA 2 / Teknik Informatika"
+                    placeholderTextColor="#94a3b8"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Nomor WhatsApp / HP (Notifikasi Pesanan)</Text>
+                  <Text style={styles.formLabel}>Nomor WhatsApp / HP</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="0812-9876-5432"
-                    placeholderTextColor="#94a3b8"
-                    keyboardType="phone-pad"
                     value={phoneSiswa}
                     onChangeText={setPhoneSiswa}
+                    placeholder="0812-xxxx-xxxx"
+                    placeholderTextColor="#94a3b8"
+                    keyboardType="phone-pad"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Alamat Email Kampus / Sekolah</Text>
+                  <Text style={styles.formLabel}>Email Sekolah</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="nama.nim@sekolah.sch.id"
-                    placeholderTextColor="#94a3b8"
-                    keyboardType="email-address"
                     value={emailSiswa}
                     onChangeText={setEmailSiswa}
+                    placeholder="nama@sekolah.sch.id"
+                    placeholderTextColor="#94a3b8"
+                    keyboardType="email-address"
                   />
                 </View>
+
+                <TouchableOpacity
+                  onPress={handleSaveProfile}
+                  style={[styles.submitBtn, { backgroundColor: activeTheme.primary }]}>
+                  <Text style={styles.submitBtnText}>✓ Simpan Perubahan Profil</Text>
+                </TouchableOpacity>
               </View>
             ) : (
-              /* FORM PENGELOLA KANTIN */
               <View style={styles.formWrapper}>
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Nama Pengelola / Penanggung Jawab Stan *</Text>
+                  <Text style={styles.formLabel}>Nama Pemilik / Chef Stan *</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Contoh: Bu Siti Rohmah"
-                    placeholderTextColor="#94a3b8"
                     value={namaPengelola}
                     onChangeText={setNamaPengelola}
+                    placeholder="Nama pemilik stan..."
+                    placeholderTextColor="#94a3b8"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Nama Stan / Usaha Kantin *</Text>
+                  <Text style={styles.formLabel}>Nama Stan Kantin *</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Contoh: Stan 1 - Dapur Bu Siti"
-                    placeholderTextColor="#94a3b8"
                     value={stanName}
                     onChangeText={setStanName}
+                    placeholder="Contoh: Stan 1 - Dapur Bu Siti"
+                    placeholderTextColor="#94a3b8"
                   />
                 </View>
 
@@ -343,39 +397,94 @@ export default function PengaturanScreen() {
                   <Text style={styles.formLabel}>Jam Operasional Stan</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Contoh: 07.30 - 15.30 WIB"
-                    placeholderTextColor="#94a3b8"
                     value={operatingHours}
                     onChangeText={setOperatingHours}
+                    placeholder="07.30 - 15.30 WIB"
+                    placeholderTextColor="#94a3b8"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Nomor WhatsApp Layanan Stan</Text>
+                  <Text style={styles.formLabel}>Nomor Telepon Stan</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="0813-8888-9999"
-                    placeholderTextColor="#94a3b8"
-                    keyboardType="phone-pad"
                     value={phoneStan}
                     onChangeText={setPhoneStan}
+                    placeholder="0813-xxxx-xxxx"
+                    placeholderTextColor="#94a3b8"
+                    keyboardType="phone-pad"
                   />
                 </View>
+
+                <TouchableOpacity
+                  onPress={handleSaveProfile}
+                  style={[styles.submitBtn, { backgroundColor: activeTheme.primary }]}>
+                  <Text style={styles.submitBtnText}>✓ Simpan Data Stan Kantin</Text>
+                </TouchableOpacity>
               </View>
             )}
-
-            <TouchableOpacity onPress={handleSaveProfile} style={styles.submitBtn}>
-              <Text style={styles.submitBtnText}>✓ Simpan Perubahan Profil</Text>
-            </TouchableOpacity>
           </View>
         )}
 
-        {/* TAB 2: FORM UBAH KATA SANDI */}
+        {/* TAB 2: TEMA WARNA DINAMIS */}
+        {activeTab === 'tema' && (
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>🎨 Personalisasi Tema Warna</Text>
+              <Text style={styles.sectionSubtitle}>
+                Pilih palet warna yang paling cocok dengan mood Anda agar melihat aplikasi tidak membosankan!
+              </Text>
+            </View>
+
+            <View style={styles.themeGrid}>
+              {themeList.map((preset) => {
+                const isSelected = themePreset === preset.id;
+                return (
+                  <TouchableOpacity
+                    key={preset.id}
+                    onPress={() => {
+                      setThemePreset(preset.id);
+                      showToast(`✓ Tema warna beralih ke ${preset.name}!`);
+                    }}
+                    style={[
+                      styles.themeCardItem,
+                      isSelected && {
+                        borderColor: preset.primary,
+                        backgroundColor: preset.primarySoft,
+                      },
+                    ]}>
+                    <View style={styles.themeCardSwatches}>
+                      <View style={[styles.swatchBall, { backgroundColor: preset.primary }]} />
+                      <View style={[styles.swatchBall, { backgroundColor: preset.accent }]} />
+                      <Text style={styles.themeIcon}>{preset.icon}</Text>
+                    </View>
+
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <View style={styles.themeTitleRow}>
+                        <Text style={[styles.themeTitle, isSelected && { color: preset.primaryDark, fontWeight: '900' }]}>
+                          {preset.name}
+                        </Text>
+                        {isSelected && (
+                          <View style={[styles.activeThemeBadge, { backgroundColor: preset.primary }]}>
+                            <Text style={styles.activeThemeBadgeText}>Aktif</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.themeTagline}>{preset.tagline}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* TAB 3: GANTI KATA SANDI */}
         {activeTab === 'sandi' && (
           <View style={styles.sectionCard}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitle}>🔒 Ubah Kata Sandi Akun</Text>
-              <Text style={styles.sectionSubtitle}>Gunakan kata sandi yang kuat untuk melindungi akun dan saldo SmartPay Anda</Text>
+              <Text style={styles.sectionTitle}>🔒 Keamanan Akun & Kata Sandi</Text>
+              <Text style={styles.sectionSubtitle}>Perbarui kata sandi akun kantin Anda secara berkala</Text>
             </View>
 
             <View style={styles.formWrapper}>
@@ -415,20 +524,16 @@ export default function PengaturanScreen() {
                 />
               </View>
 
-              <View style={styles.passwordTipBox}>
-                <Text style={styles.passwordTipTitle}>💡 Tips Keamanan Kata Sandi:</Text>
-                <Text style={styles.passwordTipItem}>• Kombinasikan huruf besar, angka, dan simbol.</Text>
-                <Text style={styles.passwordTipItem}>• Jangan berikan kata sandi atau kode QRIS kepada siapapun.</Text>
-              </View>
-
-              <TouchableOpacity onPress={handleSavePassword} style={[styles.submitBtn, { backgroundColor: '#2563eb' }]}>
+              <TouchableOpacity
+                onPress={handleSavePassword}
+                style={[styles.submitBtn, { backgroundColor: activeTheme.primary }]}>
                 <Text style={styles.submitBtnText}>🔐 Perbarui Kata Sandi Sekarang</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* TAB 3: PREFERENSI & NOTIFIKASI */}
+        {/* TAB 4: PREFERENSI MAKANAN & NOTIFIKASI */}
         {activeTab === 'preferensi' && (
           <View style={styles.sectionCard}>
             <View style={styles.sectionTitleRow}>
@@ -445,8 +550,15 @@ export default function PengaturanScreen() {
                     <TouchableOpacity
                       key={pref}
                       onPress={() => setDietaryPref(pref)}
-                      style={[styles.tasteChip, dietaryPref === pref && styles.tasteChipActive]}>
-                      <Text style={[styles.tasteChipText, dietaryPref === pref && styles.tasteChipTextActive]}>
+                      style={[
+                        styles.tasteChip,
+                        dietaryPref === pref && { backgroundColor: activeTheme.primary, borderColor: activeTheme.primary },
+                      ]}>
+                      <Text
+                        style={[
+                          styles.tasteChipText,
+                          dietaryPref === pref && { color: '#ffffff', fontWeight: '800' },
+                        ]}>
                         {pref}
                       </Text>
                     </TouchableOpacity>
@@ -475,12 +587,14 @@ export default function PengaturanScreen() {
                 <Switch
                   value={soundAlerts}
                   onValueChange={setSoundAlerts}
-                  trackColor={{ false: '#cbd5e1', true: '#10b981' }}
+                  trackColor={{ false: '#cbd5e1', true: activeTheme.primary }}
                   thumbColor="#ffffff"
                 />
               </View>
 
-              <TouchableOpacity onPress={handleSaveProfile} style={styles.submitBtn}>
+              <TouchableOpacity
+                onPress={handleSaveProfile}
+                style={[styles.submitBtn, { backgroundColor: activeTheme.primary }]}>
                 <Text style={styles.submitBtnText}>✓ Simpan Preferensi</Text>
               </TouchableOpacity>
             </View>
@@ -491,8 +605,8 @@ export default function PengaturanScreen() {
         <View style={styles.securityBox}>
           <View style={styles.securityHeader}>
             <Text style={styles.securityTitle}>🛡️ Sistem Keamanan & Token JWT</Text>
-            <TouchableOpacity onPress={() => setIsJwtModalOpen(true)} style={styles.inspectMiniBtn}>
-              <Text style={styles.inspectMiniBtnText}>Buka Inspector ➔</Text>
+            <TouchableOpacity onPress={() => setIsJwtModalOpen(true)} style={[styles.inspectMiniBtn, { backgroundColor: activeTheme.primarySoft }]}>
+              <Text style={[styles.inspectMiniBtnText, { color: activeTheme.primaryDark }]}>Inspeksi Token ➔</Text>
             </TouchableOpacity>
           </View>
 
@@ -501,7 +615,7 @@ export default function PengaturanScreen() {
           </Text>
 
           <View style={styles.tokenDisplayCard}>
-            <Text style={styles.tokenDisplayLabel}>Token JWT Aktif:</Text>
+            <Text style={styles.tokenDisplayLabel}>Token JWT Bearer Aktif:</Text>
             <Text style={styles.tokenDisplayText} numberOfLines={2}>
               {token || 'Tidak ada token aktif'}
             </Text>
@@ -538,7 +652,7 @@ const styles = StyleSheet.create({
   },
   profileHeaderCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 16,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
@@ -558,11 +672,9 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#ecfdf5',
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#10b981',
   },
   avatarIcon: {
     fontSize: 32,
@@ -582,35 +694,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginTop: 6,
-    flexWrap: 'wrap',
   },
   roleBadge: {
-    backgroundColor: '#ecfdf5',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#a7f3d0',
   },
   roleBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#047857',
   },
   jwtStatusChip: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f1f5f9',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
   },
   jwtStatusChipText: {
+    color: '#334155',
     fontSize: 10,
-    fontWeight: '800',
-    color: '#38bdf8',
+    fontWeight: '700',
   },
   profileTopActions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
@@ -625,9 +734,9 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   switchLoginBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
     color: '#334155',
+    fontSize: 11,
+    fontWeight: '700',
   },
   logoutBtn: {
     flex: 1,
@@ -639,27 +748,28 @@ const styles = StyleSheet.create({
     borderColor: '#fca5a5',
   },
   logoutBtnText: {
-    fontSize: 12,
+    color: '#dc2626',
+    fontSize: 11,
     fontWeight: '700',
-    color: '#b91c1c',
   },
   feedbackBanner: {
     padding: 12,
     borderRadius: 12,
-    borderWidth: 1,
   },
   feedbackSuccess: {
     backgroundColor: '#ecfdf5',
+    borderWidth: 1,
     borderColor: '#86efac',
   },
   feedbackError: {
     backgroundColor: '#fee2e2',
+    borderWidth: 1,
     borderColor: '#fca5a5',
   },
   feedbackBannerText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#065f46',
+    color: '#0f172a',
     textAlign: 'center',
   },
   tabContainer: {
@@ -679,29 +789,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
   },
   tabBtnText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#64748b',
   },
   tabBtnTextActive: {
-    color: '#047857',
     fontWeight: '900',
   },
   sectionCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 18,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
     gap: 14,
   },
   sectionTitleRow: {
-    gap: 3,
+    marginBottom: 4,
   },
   sectionTitle: {
     fontSize: 16,
@@ -711,6 +825,42 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 12,
     color: '#64748b',
+    marginTop: 2,
+    lineHeight: 17,
+  },
+  avatarSection: {
+    gap: 8,
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  avatarChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 6,
+  },
+  avatarChipActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  avatarChipIcon: {
+    fontSize: 18,
+  },
+  avatarChipLabel: {
+    fontSize: 11,
+    color: '#334155',
+    fontWeight: '700',
   },
   formWrapper: {
     gap: 12,
@@ -728,96 +878,124 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#cbd5e1',
     borderRadius: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 13,
     color: '#0f172a',
   },
+  submitBtn: {
+    paddingVertical: 13,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  submitBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  themeGrid: {
+    gap: 10,
+  },
+  themeCardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#ffffff',
+  },
+  themeCardSwatches: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: -6,
+  },
+  swatchBall: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+  },
+  themeIcon: {
+    fontSize: 18,
+    marginLeft: 10,
+  },
+  themeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  themeTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  themeTagline: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 1,
+  },
+  activeThemeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  activeThemeBadgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
   tasteOptionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   tasteChip: {
     backgroundColor: '#f8fafc',
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  tasteChipActive: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#10b981',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
   },
   tasteChipText: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '700',
     color: '#475569',
-    fontWeight: '600',
-  },
-  tasteChipTextActive: {
-    color: '#047857',
-    fontWeight: '800',
   },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    marginTop: 4,
   },
   switchTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#1e293b',
   },
   switchDesc: {
     fontSize: 11,
     color: '#64748b',
     marginTop: 2,
   },
-  passwordTipBox: {
-    backgroundColor: '#eff6ff',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#bfdbfe',
-    gap: 4,
-  },
-  passwordTipTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#1d4ed8',
-  },
-  passwordTipItem: {
-    fontSize: 11,
-    color: '#1e40af',
-  },
-  submitBtn: {
-    backgroundColor: '#059669',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 4,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  submitBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800',
-  },
   securityBox: {
-    backgroundColor: '#0f172a',
-    borderRadius: 18,
+    backgroundColor: '#ffffff',
+    borderRadius: 22,
     padding: 16,
-    gap: 8,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    gap: 10,
   },
   securityHeader: {
     flexDirection: 'row',
@@ -826,44 +1004,37 @@ const styles = StyleSheet.create({
   },
   securityTitle: {
     fontSize: 14,
-    fontWeight: '900',
-    color: '#ffffff',
+    fontWeight: '800',
+    color: '#0f172a',
   },
   inspectMiniBtn: {
-    backgroundColor: '#1e293b',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#334155',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
   inspectMiniBtnText: {
-    color: '#38bdf8',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
   },
   securityDesc: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#64748b',
     lineHeight: 16,
   },
   tokenDisplayCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 10,
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
     padding: 10,
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: '#334155',
+    gap: 4,
   },
   tokenDisplayLabel: {
     fontSize: 10,
-    color: '#64748b',
+    color: '#94a3b8',
     fontWeight: '700',
   },
   tokenDisplayText: {
-    fontSize: 11,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontSize: 10,
     color: '#38bdf8',
-    marginTop: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
 });

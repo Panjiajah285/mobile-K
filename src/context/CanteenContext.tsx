@@ -1,6 +1,7 @@
 import { INITIAL_MENU, INITIAL_ORDERS, MenuItem, Order, OrderItem } from '@/constants/canteenData';
+import { THEME_PRESETS, ThemePreset, ThemePresetKey } from '@/constants/theme';
 import { apiGetMenuById, apiLogin, apiLogout, ApiResponse } from '@/services/api';
-import { createJwtToken, verifyJwtToken } from '@/utils/jwt';
+import { createJwtToken } from '@/utils/jwt';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -13,6 +14,8 @@ export interface UserAccount {
   name: string;
   role: 'siswa' | 'pengelola' | 'guest';
   detail: string;
+  avatar?: string;
+  themePreset?: ThemePresetKey;
   nim?: string;
   phone?: string;
   email?: string;
@@ -30,6 +33,9 @@ interface CanteenContextType {
   token: string | null;
   refreshToken: string | null;
   setRole: (role: 'siswa' | 'pengelola') => void;
+  themePreset: ThemePresetKey;
+  setThemePreset: (preset: ThemePresetKey) => void;
+  activeTheme: ThemePreset;
   balance: number;
   menu: MenuItem[];
   cart: CartItem[];
@@ -45,11 +51,12 @@ interface CanteenContextType {
   updateCartQty: (itemId: string, qty: number) => void;
   updateCartItemNote: (itemId: string, note: string) => void;
   clearCart: () => void;
-  checkout: (paymentMethod: string, pickupSlot: string, studentName?: string, studentClass?: string) => string;
+  checkout: (paymentMethod: string, pickupSlot: string, studentName?: string, studentClass?: string, discountAmount?: number) => string;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
   cancelOrder: (orderId: string) => boolean;
   updateStock: (menuId: string, delta: number) => void;
   addMenuItem: (item: Omit<MenuItem, 'id' | 'image'> & { image?: any }) => MenuItem;
+  updateMenuItem: (menuId: string, updatedData: Partial<MenuItem>) => void;
   deleteMenuItem: (menuId: string) => void;
   toggleMenuAvailability: (menuId: string) => void;
 }
@@ -61,6 +68,7 @@ const STORAGE_KEYS = {
   BALANCE: '@smartcanteen_balance_v2',
   TOKEN: '@smartcanteen_jwt_token_v2',
   REFRESH_TOKEN: '@smartcanteen_refresh_token_v2',
+  THEME_PRESET: '@smartcanteen_theme_preset_v2',
 };
 
 const DEFAULT_USER: UserAccount = {
@@ -68,6 +76,8 @@ const DEFAULT_USER: UserAccount = {
   name: 'Natania Oktaviani',
   role: 'siswa',
   detail: 'NIM: 202610192 (Kelas XII MIPA 2)',
+  avatar: '🎓',
+  themePreset: 'sunset',
   nim: '202610192',
   phone: '0812-9876-5432',
   email: 'natania.oktaviani@sekolah.sch.id',
@@ -82,12 +92,24 @@ const CanteenContext = createContext<CanteenContextType | undefined>(undefined);
 export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserAccount | null>(DEFAULT_USER);
   const [role, setRole] = useState<'siswa' | 'pengelola'>('siswa');
+  const [themePreset, setThemePresetState] = useState<ThemePresetKey>('sunset');
   const [token, setToken] = useState<string | null>(() => createJwtToken(DEFAULT_USER, 3600, 'access'));
   const [refreshToken, setRefreshToken] = useState<string | null>(() => createJwtToken(DEFAULT_USER, 7 * 86400, 'refresh'));
   const [balance, setBalance] = useState<number>(50000);
   const [menu, setMenu] = useState<MenuItem[]>(INITIAL_MENU);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+
+  const setThemePreset = async (preset: ThemePresetKey) => {
+    setThemePresetState(preset);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.THEME_PRESET, preset);
+    } catch (e) {
+      console.log('Error saving theme preset:', e);
+    }
+  };
+
+  const activeTheme = THEME_PRESETS[themePreset] || THEME_PRESETS.sunset;
 
   // Load saved state from AsyncStorage on initial launch
   useEffect(() => {
@@ -99,10 +121,18 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const storedMenu = await AsyncStorage.getItem(STORAGE_KEYS.MENU);
         const storedToken = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
         const storedRefreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+        const storedTheme = await AsyncStorage.getItem(STORAGE_KEYS.THEME_PRESET);
+
+        if (storedTheme && (storedTheme as ThemePresetKey) in THEME_PRESETS) {
+          setThemePresetState(storedTheme as ThemePresetKey);
+        }
 
         if (storedUser) {
           const parsedUser: UserAccount = JSON.parse(storedUser);
           setUser(parsedUser);
+          if (parsedUser.themePreset && parsedUser.themePreset in THEME_PRESETS) {
+            setThemePresetState(parsedUser.themePreset);
+          }
           if (parsedUser.role === 'siswa' || parsedUser.role === 'pengelola') {
             setRole(parsedUser.role);
           }
@@ -128,9 +158,14 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const parsedMenu: MenuItem[] = JSON.parse(storedMenu);
           const mappedMenu = parsedMenu.map((m) => {
             const original = INITIAL_MENU.find((init) => init.id === m.id);
+            const hasCustomUri = m.image && (typeof m.image === 'string' || (typeof m.image === 'object' && m.image.uri));
             return {
               ...m,
-              image: m.image || (original ? original.image : require('@/assets/images/ayam-geprek.jpg')),
+              image: hasCustomUri
+                ? (typeof m.image === 'string' ? { uri: m.image } : m.image)
+                : original
+                ? original.image
+                : m.image || require('@/assets/images/ayam-geprek.jpg'),
             };
           });
           setMenu(mappedMenu);
@@ -352,9 +387,11 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     paymentMethod: string,
     pickupSlot: string,
     studentName = user?.name || 'Natania Oktaviani',
-    studentClass = user?.detail || 'NIM: 202610192'
+    studentClass = user?.detail || 'NIM: 202610192',
+    discountAmount = 0
   ): string => {
-    const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const rawTotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const totalAmount = Math.max(0, rawTotal - discountAmount);
     const newQueueNum = `A-0${orders.length + 26}`;
     const newOrderId = `ORD-2026-0${orders.length + 6}`;
 
@@ -484,6 +521,20 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return newItem;
   };
 
+  const updateMenuItem = (menuId: string, updatedData: Partial<MenuItem>) => {
+    const updated = menu.map((m) => {
+      if (m.id === menuId) {
+        return {
+          ...m,
+          ...updatedData,
+        };
+      }
+      return m;
+    });
+    setMenu(updated);
+    saveMenu(updated);
+  };
+
   const deleteMenuItem = (menuId: string) => {
     const updatedMenu = menu.filter((m) => m.id !== menuId);
     setMenu(updatedMenu);
@@ -498,6 +549,9 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         token,
         refreshToken,
         setRole,
+        themePreset,
+        setThemePreset,
+        activeTheme,
         balance,
         menu,
         cart,
@@ -518,6 +572,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         cancelOrder,
         updateStock,
         addMenuItem,
+        updateMenuItem,
         deleteMenuItem,
         toggleMenuAvailability,
       }}>

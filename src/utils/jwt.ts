@@ -122,7 +122,7 @@ export function decodeJwtToken(token: string): DecodedJwt | null {
     const signature = parts[2];
 
     return { header, payload, signature };
-  } catch (e) {
+  } catch {
     return null;
   }
 }

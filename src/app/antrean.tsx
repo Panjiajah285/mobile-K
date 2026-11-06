@@ -13,16 +13,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const STEPS = [
-  { key: 'menunggu', label: 'Menunggu', icon: '⏳' },
-  { key: 'diproses', label: 'Dimasak', icon: '🍳' },
-  { key: 'siap', label: 'Siap Diambil', icon: '🔔' },
-  { key: 'selesai', label: 'Selesai', icon: '✔️' },
+  { key: 'menunggu', label: 'Menunggu', icon: '⏳', desc: 'Pesanan masuk ke dapur stan' },
+  { key: 'diproses', label: 'Dimasak', icon: '🍳', desc: 'Koki sedang memasak hidangan' },
+  { key: 'siap', label: 'Siap Ambil', icon: '🔔', desc: 'Silakan ambil di stan kantin' },
+  { key: 'selesai', label: 'Selesai', icon: '✔️', desc: 'Sudah diambil oleh siswa' },
 ];
 
 export default function AntreanScreen() {
-  const { orders, cancelOrder, user } = useCanteen();
+  const { orders, cancelOrder, user, activeTheme } = useCanteen();
   const [activeTab, setActiveTab] = useState<'saya' | 'semua' | 'riwayat'>('saya');
   const [searchQuery, setSearchQuery] = useState('');
+  const [chimeNotice, setChimeNotice] = useState<string | null>(null);
 
   const myOrders = orders.filter(
     (o) =>
@@ -57,7 +58,7 @@ export default function AntreanScreen() {
     const confirmAction = () => {
       const ok = cancelOrder(orderId);
       if (ok) {
-        const msg = `Pesanan ${queueNum} berhasil dibatalkan. Jika menggunakan SmartPay, saldo telah dikembalikan ke akun Anda.`;
+        const msg = `Pesanan ${queueNum} berhasil dibatalkan. Jika menggunakan SmartPay, saldo telah dikembalikan ke kartu Anda.`;
         if (Platform.OS === 'web') alert(msg);
         else Alert.alert('Pesanan Dibatalkan', msg);
       }
@@ -77,6 +78,12 @@ export default function AntreanScreen() {
         ]
       );
     }
+  };
+
+  const handlePlayChime = (queueNum: string) => {
+    const notice = `🔔 [TING TUNG!] Panggilan untuk Nomor Antrean ${queueNum}! Pesanan sudah siap diambil hangat di stan kantin.`;
+    setChimeNotice(notice);
+    setTimeout(() => setChimeNotice(null), 4000);
   };
 
   const getStepIndex = (status: string) => {
@@ -117,34 +124,63 @@ export default function AntreanScreen() {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Pelacak Antrean Kantin 📋</Text>
+          <Text style={styles.title}>Pelacak Antrean Digital 📋</Text>
           <Text style={styles.subtitle}>
-            Pantau proses pembuatan makanan & notifikasi pengambilan real-time
+            Pantau status live masak, jam pengambilan, dan tiket digital pengambilan makanan.
           </Text>
         </View>
+
+        {/* Chime Announcement Toast */}
+        {chimeNotice && (
+          <View style={[styles.chimeBanner, { backgroundColor: activeTheme.primary }]}>
+            <Text style={styles.chimeIcon}>🔔</Text>
+            <Text style={styles.chimeText}>{chimeNotice}</Text>
+          </View>
+        )}
 
         {/* Tab Switcher */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
             onPress={() => setActiveTab('saya')}
-            style={[styles.tabBtn, activeTab === 'saya' && styles.tabBtnActive]}>
-            <Text style={[styles.tabBtnText, activeTab === 'saya' && styles.tabBtnTextActive]}>
+            style={[
+              styles.tabBtn,
+              activeTab === 'saya' && styles.tabBtnActive,
+            ]}>
+            <Text
+              style={[
+                styles.tabBtnText,
+                activeTab === 'saya' && [styles.tabBtnTextActive, { color: activeTheme.primaryDark }],
+              ]}>
               🔥 Pesanan Saya ({myOrders.filter((o) => o.status !== 'selesai' && o.status !== 'dibatalkan').length})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setActiveTab('semua')}
-            style={[styles.tabBtn, activeTab === 'semua' && styles.tabBtnActive]}>
-            <Text style={[styles.tabBtnText, activeTab === 'semua' && styles.tabBtnTextActive]}>
+            style={[
+              styles.tabBtn,
+              activeTab === 'semua' && styles.tabBtnActive,
+            ]}>
+            <Text
+              style={[
+                styles.tabBtnText,
+                activeTab === 'semua' && [styles.tabBtnTextActive, { color: activeTheme.primaryDark }],
+              ]}>
               📋 Semua Antrean ({orders.filter((o) => o.status !== 'selesai' && o.status !== 'dibatalkan').length})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setActiveTab('riwayat')}
-            style={[styles.tabBtn, activeTab === 'riwayat' && styles.tabBtnActive]}>
-            <Text style={[styles.tabBtnText, activeTab === 'riwayat' && styles.tabBtnTextActive]}>
+            style={[
+              styles.tabBtn,
+              activeTab === 'riwayat' && styles.tabBtnActive,
+            ]}>
+            <Text
+              style={[
+                styles.tabBtnText,
+                activeTab === 'riwayat' && [styles.tabBtnTextActive, { color: activeTheme.primaryDark }],
+              ]}>
               📜 Riwayat
             </Text>
           </TouchableOpacity>
@@ -155,7 +191,7 @@ export default function AntreanScreen() {
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
-            placeholder="Cari nomor antrean (A-024) atau nama siswa..."
+            placeholder="Cari nomor antrean (A-024) atau nama makanan..."
             placeholderTextColor="#94a3b8"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -173,15 +209,15 @@ export default function AntreanScreen() {
             <Text style={styles.emptyIcon}>📦</Text>
             <Text style={styles.emptyTitle}>
               {activeTab === 'saya'
-                ? 'Belum Ada Pesanan Aktif Anda'
+                ? 'Belum Ada Pesanan Berjalan'
                 : activeTab === 'semua'
-                ? 'Tidak Ada Antrean Berjalan'
-                : 'Belum Ada Riwayat Selesai'}
+                ? 'Semua Antrean Selesai'
+                : 'Belum Ada Riwayat Pesanan'}
             </Text>
             <Text style={styles.emptyText}>
               {activeTab === 'saya'
-                ? 'Pesan makanan dari tab Menu untuk mendapatkan nomor antrean digital.'
-                : 'Semua pesanan saat ini sudah selesai disajikan.'}
+                ? 'Pesan makanan lezat dari tab Menu untuk mendapatkan nomor antrean digital!'
+                : 'Kantin saat ini sedang santai atau pesanan sebelumnya sudah diserahkan.'}
             </Text>
           </View>
         ) : (
@@ -192,27 +228,47 @@ export default function AntreanScreen() {
             const canCancel = order.status === 'menunggu';
 
             return (
-              <View key={order.id} style={[styles.orderCard, isReady && styles.orderCardReady]}>
+              <View
+                key={order.id}
+                style={[
+                  styles.ticketCard,
+                  isReady && { borderColor: '#86efac', shadowColor: '#10b981' },
+                ]}>
 
                 {/* Ready Callout Alert Banner */}
                 {isReady && (
                   <View style={styles.readyBanner}>
                     <Text style={styles.readyBannerIcon}>🎉</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.readyBannerTitle}>PESANAN SUDAH SIAP!</Text>
+                      <Text style={styles.readyBannerTitle}>PESANAN SUDAH SIAP DIAMBIL!</Text>
                       <Text style={styles.readyBannerDesc}>
-                        Silakan ambil pesanan Anda sekarang di stan kantin dengan menyebutkan nomor antrean ini.
+                        Silakan menuju stan dan tunjukkan tiket digital ini ke petugas kasir.
                       </Text>
                     </View>
+                    <TouchableOpacity
+                      onPress={() => handlePlayChime(order.queueNumber)}
+                      style={styles.chimeBtn}>
+                      <Text style={styles.chimeBtnText}>🔔 Bel</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
 
-                {/* Card Top Header */}
+                {/* Ticket Top: Queue Number & Live Badge */}
                 <View style={styles.cardHeader}>
                   <View>
-                    <Text style={styles.queueLabel}>NOMOR ANTREAN</Text>
-                    <Text style={styles.queueNumber}>{order.queueNumber}</Text>
+                    <Text style={styles.queueLabel}>TIKET ANTREAN DIGITAL</Text>
+                    <View style={styles.queueNumberRow}>
+                      <Text style={[styles.queueNumber, { color: activeTheme.primary }]}>
+                        {order.queueNumber}
+                      </Text>
+                      {isReady && (
+                        <View style={styles.livePulsePill}>
+                          <Text style={styles.livePulseText}>● SIAP AMBIL</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
+
                   <View
                     style={[
                       styles.statusBadge,
@@ -224,7 +280,7 @@ export default function AntreanScreen() {
                   </View>
                 </View>
 
-                {/* Visual Step Tracker (Only for non-canceled orders) */}
+                {/* Visual Step Tracker */}
                 {order.status !== 'dibatalkan' && (
                   <View style={styles.stepTracker}>
                     {STEPS.map((step, idx) => {
@@ -237,15 +293,15 @@ export default function AntreanScreen() {
                               <View
                                 style={[
                                   styles.stepLine,
-                                  isCompleted && styles.stepLineActive,
+                                  isCompleted && [styles.stepLineActive, { backgroundColor: activeTheme.primary }],
                                 ]}
                               />
                             )}
                             <View
                               style={[
                                 styles.stepCircle,
-                                isCompleted && styles.stepCircleCompleted,
-                                isCurrent && styles.stepCircleCurrent,
+                                isCompleted && [styles.stepCircleCompleted, { backgroundColor: activeTheme.primary, borderColor: activeTheme.primary }],
+                                isCurrent && [styles.stepCircleCurrent, { borderColor: activeTheme.primary }],
                               ]}>
                               <Text style={styles.stepIcon}>{step.icon}</Text>
                             </View>
@@ -253,7 +309,7 @@ export default function AntreanScreen() {
                               <View
                                 style={[
                                   styles.stepLine,
-                                  currentStepIdx > idx && styles.stepLineActive,
+                                  currentStepIdx > idx && [styles.stepLineActive, { backgroundColor: activeTheme.primary }],
                                 ]}
                               />
                             )}
@@ -261,7 +317,7 @@ export default function AntreanScreen() {
                           <Text
                             style={[
                               styles.stepLabel,
-                              isCurrent && styles.stepLabelCurrent,
+                              isCurrent && [styles.stepLabelCurrent, { color: activeTheme.primaryDark }],
                               isCompleted && styles.stepLabelCompleted,
                             ]}>
                             {step.label}
@@ -272,7 +328,12 @@ export default function AntreanScreen() {
                   </View>
                 )}
 
-                <View style={styles.divider} />
+                {/* Perforated Ticket Dashed Divider */}
+                <View style={styles.ticketPerforatedRow}>
+                  <View style={styles.notchLeft} />
+                  <View style={styles.dashedLine} />
+                  <View style={styles.notchRight} />
+                </View>
 
                 {/* Student & Slot Details */}
                 <View style={styles.metaGrid}>
@@ -284,7 +345,9 @@ export default function AntreanScreen() {
                   </View>
                   <View style={styles.metaRow}>
                     <Text style={styles.metaLabel}>Jam Ambil:</Text>
-                    <Text style={styles.metaVal}>⏱️ {order.pickupSlot}</Text>
+                    <Text style={[styles.metaVal, { color: activeTheme.primaryDark, fontWeight: '800' }]}>
+                      ⏱️ {order.pickupSlot}
+                    </Text>
                   </View>
                   <View style={styles.metaRow}>
                     <Text style={styles.metaLabel}>Pembayaran:</Text>
@@ -294,6 +357,12 @@ export default function AntreanScreen() {
                     <Text style={styles.metaLabel}>Waktu Pesan:</Text>
                     <Text style={styles.metaVal}>🕒 {order.createdAt}</Text>
                   </View>
+                </View>
+
+                {/* Barcode Simulation Strip */}
+                <View style={styles.barcodeStrip}>
+                  <Text style={styles.barcodeText}>||| | |||| || ||| |||| | ||| |||| |</Text>
+                  <Text style={styles.barcodeSub}>VALIDASI AMBIL: {order.id} • SCAN STAN</Text>
                 </View>
 
                 {/* Item List */}
@@ -307,11 +376,11 @@ export default function AntreanScreen() {
                         </Text>
                         {item.note ? (
                           <Text style={styles.itemNoteText}>
-                            ↳ Catatan: "{item.note}"
+                            ↳ Catatan: &quot;{item.note}&quot;
                           </Text>
                         ) : null}
                       </View>
-                      <Text style={styles.itemTextPrice}>
+                      <Text style={[styles.itemTextPrice, { color: activeTheme.primary }]}>
                         Rp {(item.price * item.qty).toLocaleString('id-ID')}
                       </Text>
                     </View>
@@ -322,18 +391,28 @@ export default function AntreanScreen() {
                 <View style={styles.cardFooter}>
                   <View>
                     <Text style={styles.totalLabel}>Total Pembayaran</Text>
-                    <Text style={styles.totalValue}>
+                    <Text style={[styles.totalValue, { color: activeTheme.primary }]}>
                       Rp {order.totalAmount.toLocaleString('id-ID')}
                     </Text>
                   </View>
 
-                  {canCancel && (
+                  <View style={styles.footerActionGroup}>
+                    {canCancel && (
+                      <TouchableOpacity
+                        onPress={() => handleCancel(order.id, order.queueNumber)}
+                        style={styles.cancelBtn}>
+                        <Text style={styles.cancelBtnText}>✕ Batalkan</Text>
+                      </TouchableOpacity>
+                    )}
+
                     <TouchableOpacity
-                      onPress={() => handleCancel(order.id, order.queueNumber)}
-                      style={styles.cancelBtn}>
-                      <Text style={styles.cancelBtnText}>✕ Batalkan Pesanan</Text>
+                      onPress={() => handlePlayChime(order.queueNumber)}
+                      style={[styles.testSoundBtn, { backgroundColor: activeTheme.primarySoft, borderColor: activeTheme.primary }]}>
+                      <Text style={[styles.testSoundBtnText, { color: activeTheme.primaryDark }]}>
+                        🔔 Panggil
+                      </Text>
                     </TouchableOpacity>
-                  )}
+                  </View>
                 </View>
               </View>
             );
@@ -368,6 +447,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748b',
     marginTop: 2,
+    lineHeight: 18,
+  },
+  chimeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  chimeIcon: {
+    fontSize: 20,
+  },
+  chimeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+    flex: 1,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -396,16 +497,15 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
   tabBtnTextActive: {
-    color: '#047857',
     fontWeight: '800',
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderWidth: 1.5,
     borderColor: '#e2e8f0',
   },
@@ -420,86 +520,106 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     backgroundColor: '#ffffff',
-    padding: 36,
-    borderRadius: 18,
+    borderRadius: 20,
+    padding: 30,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#e2e8f0',
-    marginTop: 10,
+    marginTop: 20,
     gap: 8,
   },
   emptyIcon: {
     fontSize: 48,
-    marginBottom: 4,
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '800',
-    color: '#1e293b',
+    fontWeight: '900',
+    color: '#0f172a',
   },
   emptyText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748b',
     textAlign: 'center',
     lineHeight: 18,
-    maxWidth: 280,
   },
-  orderCard: {
+  ticketCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#e2e8f0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
     gap: 12,
   },
-  orderCardReady: {
-    borderColor: '#10b981',
-    borderWidth: 2,
-    backgroundColor: '#fafdfb',
-  },
   readyBanner: {
-    backgroundColor: '#10b981',
-    borderRadius: 12,
-    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    backgroundColor: '#ecfdf5',
+    borderWidth: 1.5,
+    borderColor: '#86efac',
+    borderRadius: 14,
+    padding: 10,
+    gap: 8,
   },
   readyBannerIcon: {
-    fontSize: 24,
+    fontSize: 22,
   },
   readyBannerTitle: {
-    color: '#ffffff',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
-    letterSpacing: 0.5,
+    color: '#15803d',
   },
   readyBannerDesc: {
-    color: '#ecfdf5',
     fontSize: 11,
-    lineHeight: 15,
-    marginTop: 2,
+    color: '#166534',
+    marginTop: 1,
+  },
+  chimeBtn: {
+    backgroundColor: '#10b981',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  chimeBtnText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '800',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   queueLabel: {
     fontSize: 10,
+    color: '#64748b',
     fontWeight: '800',
-    color: '#94a3b8',
     letterSpacing: 0.5,
   },
+  queueNumberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
   queueNumber: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '900',
-    color: '#047857',
+  },
+  livePulsePill: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  livePulseText: {
+    color: '#15803d',
+    fontSize: 10,
+    fontWeight: '800',
   },
   statusBadge: {
     paddingHorizontal: 10,
@@ -514,11 +634,12 @@ const styles = StyleSheet.create({
   stepTracker: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingHorizontal: 8,
     paddingVertical: 6,
   },
   stepItem: {
-    flex: 1,
     alignItems: 'center',
+    flex: 1,
   },
   stepIndicatorRow: {
     flexDirection: 'row',
@@ -532,26 +653,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#e2e8f0',
   },
   stepLineActive: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#059669',
   },
   stepCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
     backgroundColor: '#f1f5f9',
-    justifyContent: 'center',
-    alignItems: 'center',
     borderWidth: 2,
     borderColor: '#cbd5e1',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   stepCircleCompleted: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#10b981',
+    backgroundColor: '#059669',
+    borderColor: '#059669',
   },
   stepCircleCurrent: {
-    backgroundColor: '#10b981',
-    borderColor: '#047857',
-    transform: [{ scale: 1.1 }],
+    borderWidth: 2.5,
   },
   stepIcon: {
     fontSize: 13,
@@ -563,40 +682,89 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  stepLabelCompleted: {
-    color: '#059669',
-  },
   stepLabelCurrent: {
-    color: '#047857',
     fontWeight: '800',
   },
-  divider: {
+  stepLabelCompleted: {
+    color: '#1e293b',
+    fontWeight: '700',
+  },
+  ticketPerforatedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: -16,
+  },
+  notchLeft: {
+    width: 12,
+    height: 24,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
+    borderLeftWidth: 0,
+    borderColor: '#e2e8f0',
+  },
+  dashedLine: {
+    flex: 1,
     height: 1,
-    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderStyle: 'dashed',
+    marginHorizontal: 4,
+  },
+  notchRight: {
+    width: 12,
+    height: 24,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1.5,
+    borderRightWidth: 0,
+    borderColor: '#e2e8f0',
   },
   metaGrid: {
     gap: 4,
   },
   metaRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
   },
   metaLabel: {
     fontSize: 12,
     color: '#64748b',
-    width: 90,
+    fontWeight: '500',
   },
   metaVal: {
     fontSize: 12,
-    fontWeight: '700',
     color: '#1e293b',
-    flex: 1,
+    fontWeight: '700',
+  },
+  barcodeStrip: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 2,
+  },
+  barcodeText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#0f172a',
+    letterSpacing: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  barcodeSub: {
+    fontSize: 9,
+    color: '#64748b',
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   itemsBox: {
     backgroundColor: '#f8fafc',
-    padding: 12,
     borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#e2e8f0',
     gap: 6,
@@ -605,56 +773,68 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     color: '#334155',
-    marginBottom: 2,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   itemTextName: {
     fontSize: 12,
     color: '#1e293b',
-    fontWeight: '500',
   },
   itemNoteText: {
     fontSize: 11,
-    color: '#059669',
+    color: '#b45309',
     fontStyle: 'italic',
-    marginTop: 2,
-    marginLeft: 8,
+    marginTop: 1,
   },
   itemTextPrice: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontWeight: '800',
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 6,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
   },
   totalLabel: {
-    fontSize: 11,
-    color: '#64748b',
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '600',
   },
   totalValue: {
     fontSize: 17,
     fontWeight: '900',
-    color: '#047857',
+  },
+  footerActionGroup: {
+    flexDirection: 'row',
+    gap: 8,
   },
   cancelBtn: {
     backgroundColor: '#fee2e2',
+    borderWidth: 1,
+    borderColor: '#fca5a5',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#fca5a5',
   },
   cancelBtnText: {
-    color: '#b91c1c',
-    fontSize: 12,
-    fontWeight: '700',
+    color: '#dc2626',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  testSoundBtn: {
+    borderWidth: 1.5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  testSoundBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
   },
 });
